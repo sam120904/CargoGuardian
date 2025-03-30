@@ -379,6 +379,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     });
   }
   
+  // ignore: unused_element
   void _updateWeightLimits(double min, double max) {
     setState(() {
       _minWeightLimit = min;
