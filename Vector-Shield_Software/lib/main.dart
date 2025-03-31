@@ -2,32 +2,77 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:async';
 import 'firebase_options.dart';
 import 'login_page.dart';
 import 'signup_page.dart';
 import 'dashboard.dart';
+import 'config.dart'; // Import to check config values
+
+// Global variable to track initialization state
+bool isInitialized = false;
+String? initError;
 
 void main() async {
-  // Ensure Flutter is initialized before doing anything else
+  // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
 
-  try {
-    // Load environment variables from .env
-    await dotenv.load(fileName: ".env");
+  // Run the app immediately, but show a loading screen
+  // This prevents the blank screen issue
+  runApp(const LoadingApp());
 
-    // Initialize Firebase with options from the config
+  try {
+    // Load environment variables
+    await dotenv.load(fileName: ".env").catchError((e) {
+      print("Warning: .env file not loaded: $e");
+      // Continue anyway, we'll use environment variables from the platform
+    });
+
+    // Debug: Print config values to help diagnose issues
+    print("FIREBASE_API_KEY: ${AppConfig.firebaseApiKey.isEmpty ? 'MISSING' : 'SET'}");
+    print("FIREBASE_APP_ID: ${AppConfig.firebaseAppId.isEmpty ? 'MISSING' : 'SET'}");
+    print("FIREBASE_PROJECT_ID: ${AppConfig.firebaseProjectId.isEmpty ? 'MISSING' : 'SET'}");
+    print("BLYNK_AUTH_TOKEN: ${AppConfig.blynkAuthToken.isEmpty ? 'MISSING' : 'SET'}");
+
+    // Initialize Firebase
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
-    // Print a debug message to confirm Firebase initialization
     print("Firebase initialized successfully");
+    isInitialized = true;
   } catch (e) {
-    // Log any initialization errors
     print("Error during initialization: $e");
+    initError = e.toString();
   }
 
+  // Now run the actual app
   runApp(const MyApp());
+}
+
+// Simple loading app to show while initializing
+class LoadingApp extends StatelessWidget {
+  const LoadingApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 20),
+              const Text("Loading application...", 
+                style: TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -70,7 +115,9 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const AuthWrapper(),
+      home: !isInitialized 
+          ? InitErrorScreen(error: initError) 
+          : const AuthWrapper(),
       routes: {
         '/login': (context) => const LoginPage(),
         '/signup': (context) => const SignupPage(),
@@ -80,20 +127,114 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// Separate widget to handle authentication state
-class AuthWrapper extends StatelessWidget {
+// Screen to show initialization errors
+class InitErrorScreen extends StatelessWidget {
+  final String? error;
+  
+  const InitErrorScreen({super.key, this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                color: Colors.red.shade700,
+                size: 60,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                "Application Initialization Error",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red.shade700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                error ?? "Failed to initialize the application. Please check your configuration.",
+                style: const TextStyle(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: () {
+                  // Try to navigate to login page anyway
+                  Navigator.pushReplacement(
+                    context, 
+                    MaterialPageRoute(builder: (context) => const LoginPage())
+                  );
+                },
+                child: const Text("Try to continue anyway"),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Separate widget to handle authentication state with timeout
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  bool _timeoutReached = false;
+  
+  @override
+  void initState() {
+    super.initState();
+    // Fallback timer - show login page after 5 seconds if Firebase auth is stuck
+    Timer(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _timeoutReached = true;
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
+        // If timeout reached and still waiting, show login page
+        if ((snapshot.connectionState == ConnectionState.waiting) && _timeoutReached) {
+          print("Auth timeout reached, showing login page");
+          return const LoginPage();
+        }
+        
         // Show loading indicator while waiting for auth state
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
+          return Scaffold(
             body: Center(
-              child: CircularProgressIndicator(),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  const Text("Checking authentication status...", 
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 8),
+                  Text("Please wait...", 
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
             ),
           );
         }
