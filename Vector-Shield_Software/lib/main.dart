@@ -8,15 +8,24 @@ import 'signup_page.dart';
 import 'dashboard.dart';
 
 void main() async {
+  // Ensure Flutter is initialized before doing anything else
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load environment variables from .env
-  await dotenv.load(fileName: ".env");
+  try {
+    // Load environment variables from .env
+    await dotenv.load(fileName: ".env");
 
-  // Initialize Firebase with options from the config
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+    // Initialize Firebase with options from the config
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    // Print a debug message to confirm Firebase initialization
+    print("Firebase initialized successfully");
+  } catch (e) {
+    // Log any initialization errors
+    print("Error during initialization: $e");
+  }
 
   runApp(const MyApp());
 }
@@ -61,18 +70,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasData) {
-            return const DashboardPage();
-          }
-          return const LoginPage();
-        },
-      ),
+      home: const AuthWrapper(),
       routes: {
         '/login': (context) => const LoginPage(),
         '/signup': (context) => const SignupPage(),
@@ -82,3 +80,34 @@ class MyApp extends StatelessWidget {
   }
 }
 
+// Separate widget to handle authentication state
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        // Show loading indicator while waiting for auth state
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+        
+        // Check if user is logged in
+        if (snapshot.hasData) {
+          print("User is logged in: ${snapshot.data?.uid}");
+          return const DashboardPage();
+        }
+        
+        // User is not logged in
+        print("User is not logged in, showing login page");
+        return const LoginPage();
+      },
+    );
+  }
+}
