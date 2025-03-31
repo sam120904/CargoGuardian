@@ -1,0 +1,15 @@
+{
+    "buildCommand": "flutter build web --release",
+    "outputDirectory": "build/web",
+    "framework": "flutter",
+    "installCommand": "curl -fsSL https://github.com/flutter/flutter/raw/stable/bin/internal/update_dart_sdk.sh | bash && flutter pub get",
+    "routes": [
+      { "handle": "filesystem" },
+      { "src": "/(.*)", "dest": "/" }
+    ],
+    "build": {
+      "env": {
+        "FLUTTER_WEB_USE_SKIA": "true"
+      }
+    }
+  }
