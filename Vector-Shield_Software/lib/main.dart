@@ -22,24 +22,24 @@ void main() async {
   runApp(const LoadingApp());
 
   try {
-    // Load environment variables
-    await dotenv.load(fileName: ".env").catchError((e) {
-      print("Warning: .env file not loaded: $e");
-      // Continue anyway, we'll use environment variables from the platform
-    });
-
+    // Initialize AppConfig first - this will try to load .env
+    // but won't fail if it doesn't exist (like on Vercel)
+    await AppConfig.initialize();
+    
     // Debug: Print config values to help diagnose issues
-    print("FIREBASE_API_KEY: ${AppConfig.firebaseApiKey.isEmpty ? 'MISSING' : 'SET'}");
-    print("FIREBASE_APP_ID: ${AppConfig.firebaseAppId.isEmpty ? 'MISSING' : 'SET'}");
-    print("FIREBASE_PROJECT_ID: ${AppConfig.firebaseProjectId.isEmpty ? 'MISSING' : 'SET'}");
-    print("BLYNK_AUTH_TOKEN: ${AppConfig.blynkAuthToken.isEmpty ? 'MISSING' : 'SET'}");
+    AppConfig.debugPrintConfig();
 
-    // Initialize Firebase
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-
-    print("Firebase initialized successfully");
+    // Check if Firebase is already initialized to avoid the "already exists" error
+    if (Firebase.apps.isEmpty) {
+      // Initialize Firebase only if it's not already initialized
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      print("Firebase initialized successfully");
+    } else {
+      print("Firebase was already initialized");
+    }
+    
     isInitialized = true;
   } catch (e) {
     print("Error during initialization: $e");
@@ -252,3 +252,4 @@ class _AuthWrapperState extends State<AuthWrapper> {
     );
   }
 }
+
