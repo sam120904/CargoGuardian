@@ -1,4 +1,6 @@
 {
   "cmake.sourceDirectory": "C:/Users/Samarth/OneDrive/Desktop/Flutter_App/flutter_app/windows",
-  "cmake.ignoreCMakeListsMissing": true
+  "cmake.ignoreCMakeListsMissing": true,
+  "java.configuration.updateBuildConfiguration": "interactive",
+  "cSpell.words": ["DNFQ", "Jynb", "Nitgo", "TMPL"]
 }

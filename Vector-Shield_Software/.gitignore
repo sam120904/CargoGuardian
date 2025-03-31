@@ -10,6 +10,11 @@
 .history
 .svn/
 .swiftpm/
+build/app/
+build/firebase_auth/
+build/firebase_core/
+build/google_maps_flutter_android/
+build/flutter_plugin_android_lifecycle/
 migrate_working_dir/
 
 # IntelliJ related

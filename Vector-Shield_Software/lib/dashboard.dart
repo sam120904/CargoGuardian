@@ -6,6 +6,11 @@ import 'dart:math' as math;
 import 'dart:async';
 import 'auth_service.dart';
 import 'blynk_service.dart'; // Import the Blynk service
+// ignore: unused_import
+import 'config.dart'; // Import the config file for API keys
+
+// Use the config in a comment to prevent unused import warning
+// Using AppConfig for Blynk credentials: ${AppConfig.blynkBaseUrl}
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -27,7 +32,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   final List<String> _trainOptions = ['Train A-123', 'Train B-456', 'Train C-789', 'Train D-012'];
   
   // Weight data
-  double _currentWeight = 42.5; // tons - will be updated with real data
+  double _currentWeight = 0.0; // Initialize with 0.0 instead of 42.5
   double _minWeightLimit = 20.0; // tons
   double _maxWeightLimit = 50.0; // tons
   bool _isOverweight = false;
@@ -46,14 +51,14 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   GoogleMapController? _mapController;
   final LatLng _trainLocation = const LatLng(28.6139, 77.2090); // Delhi coordinates as example
   
-  // Weight history data for graph
+  // Weight history data for graph - initialize with zeros
   List<FlSpot> _weightData = [
-    const FlSpot(0, 30),
-    const FlSpot(1, 35),
-    const FlSpot(2, 38),
-    const FlSpot(3, 40),
-    const FlSpot(4, 42),
-    const FlSpot(5, 42.5),
+    const FlSpot(0, 0),
+    const FlSpot(1, 0),
+    const FlSpot(2, 0),
+    const FlSpot(3, 0),
+    const FlSpot(4, 0),
+    const FlSpot(5, 0),
   ];
   
   // Alert data
@@ -62,6 +67,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   
   // Tab selection
   int _selectedTabIndex = 0;
+  
+  // Flag to prevent alert on initial load
+  bool _isInitialLoad = true;
   
   @override
   void initState() {
@@ -115,10 +123,12 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         setState(() {
           _weightData = spots;
           _isLoadingHistory = false;
+          _isInitialLoad = false; // Set initial load to false after data is loaded
         });
       } else if (mounted) {
         setState(() {
           _isLoadingHistory = false;
+          _isInitialLoad = false; // Set initial load to false even if no history
         });
       }
     } catch (e) {
@@ -127,6 +137,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         setState(() {
           _isLoadingWeight = false;
           _isLoadingHistory = false;
+          _isInitialLoad = false; // Set initial load to false even on error
         });
       }
     }
@@ -164,11 +175,21 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   
   void _checkWeightStatus() {
     setState(() {
+      bool wasOverweight = _isOverweight;
+      bool wasUnderweight = _isUnderweight;
+      
       _isOverweight = _currentWeight > _maxWeightLimit;
       _isUnderweight = _currentWeight < _minWeightLimit;
       
+      // If weight was abnormal but is now normal, clear any existing alerts
+      if ((wasOverweight || wasUnderweight) && !_isOverweight && !_isUnderweight) {
+        _hasAlert = false;
+        _alertMessage = '';
+      }
+      
       // Generate random alert for demo if weight changes significantly
-      if (!_hasAlert && math.Random().nextDouble() < 0.2) {
+      // Skip alert generation during initial load
+      if (!_hasAlert && !_isInitialLoad && math.Random().nextDouble() < 0.2) {
         final weightChange = (_weightData.isNotEmpty && _weightData.length > 1) 
             ? _weightData.last.y - _weightData[_weightData.length - 2].y 
             : 0.0;
@@ -460,67 +481,67 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     return Scaffold(
       body: Column(
         children: [
-          // App Bar - Now only the navbar is fixed at the top
+          // App Bar - Only the navbar is fixed at the top
           _buildAppBar(user),
           
-          // Main Content - Separate from the navbar
+          // Main Content - Scrollable content below navbar
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.blue.shade50,
-                    Colors.teal.shade50,
-                  ],
+            child: SingleChildScrollView(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.blue.shade50,
+                      Colors.teal.shade50,
+                    ],
+                  ),
                 ),
-              ),
-              child: SafeArea(
-                top: false, // Don't add safe area padding at the top since we have the navbar
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Column(
-                    children: [
-                      // Train Selector and Alert Banner
-                      Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 1200),
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                            child: Column(
-                              children: [
-                                _buildTrainSelector(),
-                                if (_hasAlert) 
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 12),
-                                    child: _buildAlertBanner(),
-                                  ),
-                              ],
+                child: SafeArea(
+                  top: false, // Don't add safe area padding at the top since we have the navbar
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Column(
+                      children: [
+                        // Train Selector and Alert Banner
+                        Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 1200),
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                              child: Column(
+                                children: [
+                                  _buildTrainSelector(),
+                                  if (_hasAlert) 
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 12),
+                                      child: _buildAlertBanner(),
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      
-                      // Tab Bar
-                      Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 1200),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: _buildTabBar(),
+                        
+                        // Tab Bar
+                        Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 1200),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: _buildTabBar(),
+                            ),
                           ),
                         ),
-                      ),
-                      
-                      // Tab Content
-                      Expanded(
-                        child: Padding(
+                        
+                        // Tab Content
+                        Padding(
                           padding: const EdgeInsets.all(16),
                           child: _buildTabContent(screenSize),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

@@ -9,7 +9,8 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixin {
+class _LoginPageState extends State<LoginPage>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -28,10 +29,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
       duration: const Duration(milliseconds: 800),
     );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
     _animationController.forward();
   }
@@ -52,11 +50,12 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
       });
 
       try {
-        await _authService.signInWithEmailAndPassword(
-          _emailController.text.trim(),
-          _passwordController.text,
-        );
-        
+        // Trim the email to remove any leading or trailing spaces
+        final email = _emailController.text.trim();
+        final password = _passwordController.text;
+
+        await _authService.signInWithEmailAndPassword(email, password);
+
         // Show success message
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -76,7 +75,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
               duration: const Duration(seconds: 2),
             ),
           );
-          
+
           // Navigate to dashboard instead of home page
           Future.delayed(const Duration(seconds: 1), () {
             Navigator.pushReplacementNamed(context, '/dashboard');
@@ -123,10 +122,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Colors.blue.shade50,
-              Colors.indigo.shade50,
-            ],
+            colors: [Colors.blue.shade50, Colors.indigo.shade50],
           ),
         ),
         child: Center(
@@ -139,7 +135,10 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.black.withOpacity(0.1), width: 1),
+                    border: Border.all(
+                      color: Colors.black.withOpacity(0.1),
+                      width: 1,
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.indigo.withOpacity(0.1),
@@ -204,12 +203,17 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.error_outline, color: Colors.red.shade700),
+                                Icon(
+                                  Icons.error_outline,
+                                  color: Colors.red.shade700,
+                                ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
                                     _errorMessage!,
-                                    style: TextStyle(color: Colors.red.shade700),
+                                    style: TextStyle(
+                                      color: Colors.red.shade700,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -225,8 +229,11 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                             if (value == null || value.isEmpty) {
                               return 'Please enter your email';
                             }
-                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                                .hasMatch(value)) {
+                            // Trim the value before validation
+                            final trimmedValue = value.trim();
+                            if (!RegExp(
+                              r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                            ).hasMatch(trimmedValue)) {
                               return 'Please enter a valid email';
                             }
                             return null;
@@ -266,7 +273,8 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                             onPressed: () {
                               showDialog(
                                 context: context,
-                                builder: (context) => _buildForgotPasswordDialog(),
+                                builder:
+                                    (context) => _buildForgotPasswordDialog(),
                               );
                             },
                             style: TextButton.styleFrom(
@@ -281,23 +289,27 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                         const SizedBox(height: 24),
                         _buildGradientButton(
                           onPressed: _isLoading ? null : _login,
-                          child: _isLoading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
+                          child:
+                              _isLoading
+                                  ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                  : const Text(
+                                    'Sign In',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                      color:
+                                          Colors
+                                              .white, // Add this line to set text color to white
+                                    ),
                                   ),
-                                )
-                              : const Text(
-                                  'Sign In',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
                         ),
                         const SizedBox(height: 24),
                         Row(
@@ -370,7 +382,10 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.red.shade400, width: 1),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
       ),
       validator: validator,
     );
@@ -383,22 +398,24 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: onPressed == null
-              ? [Colors.grey.shade400, Colors.grey.shade500]
-              : [Colors.indigo.shade500, Colors.blue.shade600],
+          colors:
+              onPressed == null
+                  ? [Colors.grey.shade400, Colors.grey.shade500]
+                  : [Colors.indigo.shade500, Colors.blue.shade600],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: onPressed == null
-            ? []
-            : [
-                BoxShadow(
-                  color: Colors.indigo.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+        boxShadow:
+            onPressed == null
+                ? []
+                : [
+                  BoxShadow(
+                    color: Colors.indigo.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
       ),
       child: ElevatedButton(
         onPressed: onPressed,
@@ -455,7 +472,11 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.error_outline, color: Colors.red.shade700, size: 20),
+                        Icon(
+                          Icons.error_outline,
+                          color: Colors.red.shade700,
+                          size: 20,
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
@@ -475,7 +496,11 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.check_circle, color: Colors.green.shade700, size: 20),
+                        Icon(
+                          Icons.check_circle,
+                          color: Colors.green.shade700,
+                          size: 20,
+                        ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
@@ -491,7 +516,10 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                   controller: emailController,
                   decoration: InputDecoration(
                     labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined, color: Colors.indigo.shade400),
+                    prefixIcon: Icon(
+                      Icons.email_outlined,
+                      color: Colors.indigo.shade400,
+                    ),
                     filled: true,
                     fillColor: Colors.grey.shade50,
                     border: OutlineInputBorder(
@@ -504,7 +532,10 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.indigo.shade400, width: 2),
+                      borderSide: BorderSide(
+                        color: Colors.indigo.shade400,
+                        width: 2,
+                      ),
                     ),
                   ),
                   keyboardType: TextInputType.emailAddress,
@@ -512,8 +543,9 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                     if (value == null || value.isEmpty) {
                       return 'Please enter your email';
                     }
-                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                        .hasMatch(value)) {
+                    if (!RegExp(
+                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                    ).hasMatch(value)) {
                       return 'Please enter a valid email';
                     }
                     return null;
@@ -535,69 +567,76 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: isLoading
-                      ? [Colors.grey.shade400, Colors.grey.shade500]
-                      : [Colors.indigo.shade500, Colors.blue.shade600],
+                  colors:
+                      isLoading
+                          ? [Colors.grey.shade400, Colors.grey.shade500]
+                          : [Colors.indigo.shade500, Colors.blue.shade600],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: ElevatedButton(
-                onPressed: isLoading
-                    ? null
-                    : () async {
-                        if (formKey.currentState!.validate()) {
-                          setState(() {
-                            isLoading = true;
-                            errorMessage = null;
-                            successMessage = null;
-                          });
+                onPressed:
+                    isLoading
+                        ? null
+                        : () async {
+                          if (formKey.currentState!.validate()) {
+                            setState(() {
+                              isLoading = true;
+                              errorMessage = null;
+                              successMessage = null;
+                            });
 
-                          try {
-                            await _authService
-                                .resetPassword(emailController.text.trim());
-                            setState(() {
-                              successMessage =
-                                  'Password reset email sent. Check your inbox.';
-                              isLoading = false;
-                            });
-                            // Close dialog after 3 seconds on success
-                            Future.delayed(const Duration(seconds: 3), () {
-                              Navigator.of(context).pop();
-                            });
-                          } on FirebaseAuthException catch (e) {
-                            setState(() {
-                              errorMessage = e.message;
-                              isLoading = false;
-                            });
-                          } catch (e) {
-                            setState(() {
-                              errorMessage = 'An unexpected error occurred';
-                              isLoading = false;
-                            });
+                            try {
+                              await _authService.resetPassword(
+                                emailController.text.trim(),
+                              );
+                              setState(() {
+                                successMessage =
+                                    'Password reset email sent. Check your inbox.';
+                                isLoading = false;
+                              });
+                              // Close dialog after 3 seconds on success
+                              Future.delayed(const Duration(seconds: 3), () {
+                                Navigator.of(context).pop();
+                              });
+                            } on FirebaseAuthException catch (e) {
+                              setState(() {
+                                errorMessage = e.message;
+                                isLoading = false;
+                              });
+                            } catch (e) {
+                              setState(() {
+                                errorMessage = 'An unexpected error occurred';
+                                isLoading = false;
+                              });
+                            }
                           }
-                        }
-                      },
+                        },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   disabledBackgroundColor: Colors.transparent,
                   shadowColor: Colors.transparent,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Send Reset Link'),
+                child:
+                    isLoading
+                        ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                        : const Text('Send Reset Link'),
               ),
             ),
           ],
@@ -606,4 +645,3 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     );
   }
 }
-

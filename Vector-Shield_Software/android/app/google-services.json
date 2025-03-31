@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "631991660262",
-    "project_id": "flutter-app-c53e8",
-    "storage_bucket": "flutter-app-c53e8.firebasestorage.app"
+    "project_number": "724662837533",
+    "project_id": "vector-shield",
+    "storage_bucket": "vector-shield.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:631991660262:android:091bd22a8ae54724601527",
+        "mobilesdk_app_id": "1:724662837533:android:f7117acbe74b929fba81f4",
         "android_client_info": {
           "package_name": "com.example.flutter_app"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyChKS1TeuUUz4-z5_lB_6rHyU60m8_cu1s"
+          "current_key": "AIzaSyDS3Qwxu0gTG5i0inF8V2-jdeFFhch9PSQ"
         }
       ],
       "services": {

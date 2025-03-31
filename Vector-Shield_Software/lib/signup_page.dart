@@ -133,8 +133,8 @@ class _SignupPageState extends State<SignupPage> with SingleTickerProviderStateM
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.purple.shade50,
               Colors.blue.shade50,
+              Colors.indigo.shade50,
             ],
           ),
         ),
@@ -151,7 +151,7 @@ class _SignupPageState extends State<SignupPage> with SingleTickerProviderStateM
                     border: Border.all(color: Colors.black.withOpacity(0.1), width: 1),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.purple.withOpacity(0.1),
+                        color: Colors.indigo.withOpacity(0.1),
                         spreadRadius: 5,
                         blurRadius: 15,
                         offset: const Offset(0, 8),
@@ -170,13 +170,13 @@ class _SignupPageState extends State<SignupPage> with SingleTickerProviderStateM
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.purple.shade50,
+                            color: Colors.indigo.shade50,
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.person_add_outlined,
                             size: 48,
-                            color: Colors.purple.shade700,
+                            color: Colors.indigo.shade700,
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -185,7 +185,7 @@ class _SignupPageState extends State<SignupPage> with SingleTickerProviderStateM
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
-                            color: Colors.purple.shade800,
+                            color: Colors.indigo.shade800,
                             letterSpacing: 0.5,
                           ),
                           textAlign: TextAlign.center,
@@ -355,6 +355,7 @@ class _SignupPageState extends State<SignupPage> with SingleTickerProviderStateM
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 0.5,
+                                    color: Colors.white,
                                   ),
                                 ),
                         ),
@@ -371,7 +372,7 @@ class _SignupPageState extends State<SignupPage> with SingleTickerProviderStateM
                                 Navigator.pushNamed(context, '/login');
                               },
                               style: TextButton.styleFrom(
-                                foregroundColor: Colors.purple.shade700,
+                                foregroundColor: Colors.indigo.shade700,
                               ),
                               child: const Text(
                                 'Sign In',
@@ -409,7 +410,7 @@ class _SignupPageState extends State<SignupPage> with SingleTickerProviderStateM
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: Colors.grey.shade600),
-        prefixIcon: Icon(icon, color: Colors.purple.shade400),
+        prefixIcon: Icon(icon, color: Colors.indigo.shade400),
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: Colors.grey.shade50,
@@ -423,7 +424,7 @@ class _SignupPageState extends State<SignupPage> with SingleTickerProviderStateM
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.purple.shade400, width: 2),
+          borderSide: BorderSide(color: Colors.indigo.shade400, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -444,7 +445,7 @@ class _SignupPageState extends State<SignupPage> with SingleTickerProviderStateM
         gradient: LinearGradient(
           colors: onPressed == null
               ? [Colors.grey.shade400, Colors.grey.shade500]
-              : [Colors.purple.shade500, Colors.blue.shade600],
+              : [Colors.indigo.shade500, Colors.blue.shade600],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
@@ -453,7 +454,7 @@ class _SignupPageState extends State<SignupPage> with SingleTickerProviderStateM
             ? []
             : [
                 BoxShadow(
-                  color: Colors.purple.withOpacity(0.3),
+                  color: Colors.indigo.withOpacity(0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),

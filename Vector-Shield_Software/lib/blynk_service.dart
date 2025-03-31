@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'config.dart'; // Import the config file for API keys
 
 class BlynkService {
-  // Blynk credentials from your code
-  final String templateId = "TMPL3DNFQ3rfM";
-  final String templateName = "final";
-  final String authToken = "5VyqNitgoIiqWJynb38LQMgqtotgnj_M";
-  final String baseUrl = "https://blynk.cloud/external/api";
+  // Get credentials from config file instead of hardcoding
+  final String templateId = AppConfig.blynkTemplateId;
+  final String templateName = AppConfig.blynkTemplateName;
+  final String authToken = AppConfig.blynkAuthToken;
+  final String baseUrl = AppConfig.blynkBaseUrl;
   
   // Get current weight data from Blynk
   Future<double> getCurrentWeight() async {
@@ -18,11 +19,11 @@ class BlynkService {
       
       if (response.statusCode == 200) {
         final value = response.body.replaceAll('[', '').replaceAll(']', '');
-        print('Raw weight value from Blynk: $value');
+        // Removed console log
       
         // Check if the value is empty (not if it's zero)
         if (value.isEmpty) {
-          print('Received empty weight, checking if this is a temporary issue');
+          // Removed console log
           // Wait a moment and try again
           await Future.delayed(const Duration(milliseconds: 300));
           final retryResponse = await http.get(
@@ -69,8 +70,8 @@ class BlynkService {
       }
     } catch (e) {
       print('Error getting weight history: $e');
-      // Return default values in case of error
-      return [30, 35, 38, 40, 42, 42.5];
+      // Return zeros for default values instead of random values
+      return [0, 0, 0, 0, 0, 0];
     }
   }
   
@@ -116,3 +117,4 @@ class BlynkService {
     }
   }
 }
+
