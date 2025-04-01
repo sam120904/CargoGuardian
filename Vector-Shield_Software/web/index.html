@@ -5,9 +5,12 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Vector Shield IoT Train Cargo Management System">
+  <meta name="description" content="Vector Shield - Train Monitoring System">
 
   <!-- iOS meta tags & icons -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- Replace deprecated apple-mobile-web-app-capable with mobile-web-app-capable -->
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Vector Shield">
@@ -19,45 +22,243 @@
   <title>Vector Shield</title>
   <link rel="manifest" href="manifest.json">
 
+  <!-- Add Google Maps API with callback -->
+  <script src="https://maps.googleapis.com/maps/api/js?callback=initGoogleMapsCallback"></script>
+
+  <!-- Add error handling for Flutter initialization -->
   <script>
     // The value below is injected by flutter build, do not touch.
     var serviceWorkerVersion = null;
+    
+    // Global variables
+    window.hasLocationPermission = false;
+    window.googleMapsLoaded = false;
+    window.mapInstances = {};
+    
+    // Google Maps callback
+    function initGoogleMapsCallback() {
+      console.log("Google Maps API loaded successfully");
+      window.googleMapsLoaded = true;
+    }
+    
+    // Function to get environment variables
+    function getEnvVar(name) {
+      if (window[name]) {
+        return window[name];
+      }
+      return "";
+    }
+    
+    // Function to get location permission status
+    function getLocationPermission() {
+      return window.hasLocationPermission || false;
+    }
+    
+    // Function to request location permission
+    function requestLocationPermission() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function(position) {
+            console.log("Location permission granted");
+            window.hasLocationPermission = true;
+          },
+          function(error) {
+            console.log("Location permission denied or error:", error.message);
+            window.hasLocationPermission = false;
+          },
+          { enableHighAccuracy: true }
+        );
+      }
+    }
+    
+    // Function to initialize a map
+    function initializeMap(elementId, lat, lng, title) {
+      if (!window.googleMapsLoaded) {
+        console.error("Google Maps not loaded yet");
+        return;
+      }
+      
+      try {
+        console.log("Initializing map with ID:", elementId);
+        
+        // Find the Flutter-created HTML element view
+        const mapContainer = document.querySelector('flt-platform-view');
+        if (!mapContainer) {
+          console.error("Map container not found");
+          return;
+        }
+        
+        // Make sure the container has proper dimensions
+        mapContainer.style.width = '100%';
+        mapContainer.style.height = '100%';
+        
+        // Create a map instance
+        const map = new google.maps.Map(mapContainer, {
+          center: { lat: lat, lng: lng },
+          zoom: 14,
+          mapTypeControl: true,
+          fullscreenControl: true,
+          streetViewControl: true,
+          zoomControl: true
+        });
+        
+        const marker = new google.maps.Marker({
+          position: { lat: lat, lng: lng },
+          map: map,
+          title: title
+        });
+        
+        // Store map instance for later reference
+        window.mapInstances[elementId] = {
+          map: map,
+          marker: marker
+        };
+        
+        console.log("Map initialized successfully");
+      } catch (e) {
+        console.error("Error initializing map:", e);
+      }
+    }
+
+    // Function to open a URL in a new tab
+    function open(url) {
+      window.open(url, '_blank');
+    }
   </script>
-  <!-- This script adds the flutter initialization JS code -->
-  <script src="flutter.js" defer></script>
-  
-  <!-- Inject environment variables for Vercel deployment -->
+
+  <!-- Add environment variables injection for Vercel -->
   <script>
-    // This script injects environment variables from Vercel into window.ENV
-    // which flutter_dotenv can access
-    window.ENV = {
-      'FIREBASE_API_KEY': '%FIREBASE_API_KEY%',
-      'FIREBASE_APP_ID': '%FIREBASE_APP_ID%',
-      'FIREBASE_PROJECT_ID': '%FIREBASE_PROJECT_ID%',
-      'FIREBASE_MESSAGING_SENDER_ID': '%FIREBASE_MESSAGING_SENDER_ID%',
-      'FIREBASE_STORAGE_BUCKET': '%FIREBASE_STORAGE_BUCKET%',
-      'BLYNK_TEMPLATE_ID': '%BLYNK_TEMPLATE_ID%',
-      'BLYNK_TEMPLATE_NAME': '%BLYNK_TEMPLATE_NAME%',
-      'BLYNK_AUTH_TOKEN': '%BLYNK_AUTH_TOKEN%',
-      'BLYNK_BASE_URL': '%BLYNK_BASE_URL%'
-    };
+    // Inject environment variables from Vercel
+    window.FIREBASE_API_KEY = "%FIREBASE_API_KEY%";
+    window.FIREBASE_APP_ID = "%FIREBASE_APP_ID%";
+    window.FIREBASE_PROJECT_ID = "%FIREBASE_PROJECT_ID%";
+    window.FIREBASE_MESSAGING_SENDER_ID = "%FIREBASE_MESSAGING_SENDER_ID%";
+    window.FIREBASE_STORAGE_BUCKET = "%FIREBASE_STORAGE_BUCKET%";
+    window.BLYNK_TEMPLATE_ID = "%BLYNK_TEMPLATE_ID%";
+    window.BLYNK_TEMPLATE_NAME = "%BLYNK_TEMPLATE_NAME%";
+    window.BLYNK_AUTH_TOKEN = "%BLYNK_AUTH_TOKEN%";
+    window.BLYNK_BASE_URL = "%BLYNK_BASE_URL%";
   </script>
+  
+  <!-- Improved script loading with error handling -->
+  <script src="flutter.js" defer></script>
 </head>
 <body>
+  <div id="loading">
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #f0f7ff;
+        font-family: Arial, sans-serif;
+      }
+      #loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        width: 100vw;
+      }
+      .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid rgba(66, 133, 244, 0.2);
+        border-top-color: #4285f4;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+      }
+      @keyframes spin {
+        to {transform: rotate(360deg);}
+      }
+      .loading-text {
+        color: #4285f4;
+        font-size: 18px;
+        font-weight: 500;
+      }
+      .error-container {
+        display: none;
+        text-align: center;
+        padding: 20px;
+        max-width: 80%;
+      }
+      .error-title {
+        color: #d32f2f;
+        font-size: 20px;
+        margin-bottom: 10px;
+      }
+      .error-message {
+        color: #555;
+        margin-bottom: 20px;
+      }
+      .retry-button {
+        background-color: #4285f4;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      .retry-button:hover {
+        background-color: #3367d6;
+      }
+    </style>
+    <div class="spinner"></div>
+    <div class="loading-text">Loading Vector Shield...</div>
+    <div id="error-container" class="error-container">
+      <div class="error-title">Initialization Error</div>
+      <div id="error-message" class="error-message">An error occurred while loading the application.</div>
+      <button id="retry-button" class="retry-button">Try Again</button>
+    </div>
+  </div>
+
   <script>
-    window.addEventListener('load', function(ev) {
-      // Download main.dart.js
+    // Request location permission early
+    setTimeout(requestLocationPermission, 2000);
+    
+    // Improved Flutter initialization with error handling
+    window.addEventListener('load', function() {
+      var loading = document.querySelector('#loading');
+      var errorContainer = document.querySelector('#error-container');
+      var errorMessage = document.querySelector('#error-message');
+      var retryButton = document.querySelector('#retry-button');
+      
+      function showError(message) {
+        loading.querySelector('.spinner').style.display = 'none';
+        loading.querySelector('.loading-text').style.display = 'none';
+        errorMessage.textContent = message || 'Failed to initialize the application.';
+        errorContainer.style.display = 'block';
+      }
+      
+      retryButton.addEventListener('click', function() {
+        window.location.reload();
+      });
+
+      // Initialize Flutter with better error handling
       _flutter.loader.loadEntrypoint({
         serviceWorker: {
           serviceWorkerVersion: serviceWorkerVersion,
         },
-        onEntrypointLoaded: function(engineInitializer) {
-          engineInitializer.initializeEngine().then(function(appRunner) {
-            appRunner.runApp();
-          });
+        onEntrypointLoaded: async function(engineInitializer) {
+          try {
+            const appRunner = await engineInitializer.initializeEngine({
+              // Use HTML renderer for better compatibility on Vercel
+              renderer: 'html'
+            });
+            await appRunner.runApp();
+          } catch (e) {
+            console.error('Flutter initialization error:', e);
+            showError('Failed to initialize Flutter: ' + e.message);
+          }
         }
+      }).catch(function(err) {
+        console.error('Flutter loader error:', err);
+        showError('Failed to load application resources: ' + err.message);
       });
     });
   </script>
 </body>
 </html>
+

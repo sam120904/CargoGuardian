@@ -5,12 +5,12 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:math' as math;
 import 'dart:async';
 import 'auth_service.dart';
-import 'blynk_service.dart'; // Import the Blynk service
-// ignore: unused_import
-import 'config.dart'; // Import the config file for API keys
-
-// Use the config in a comment to prevent unused import warning
-// Using AppConfig for Blynk credentials: ${AppConfig.blynkBaseUrl}
+import 'blynk_service.dart';
+import 'config.dart';
+import 'package:flutter/foundation.dart';
+// Conditionally import dart:js only for web platforms
+import 'dart:js_util' if (dart.library.html) 'dart:js_util' as js_util;
+import 'dart:html' as html;
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -21,7 +21,7 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> with SingleTickerProviderStateMixin {
   final _authService = AuthService();
-  final _blynkService = BlynkService(); // Initialize Blynk service
+  final _blynkService = BlynkService();
   
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -32,13 +32,13 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   final List<String> _trainOptions = ['Train A-123', 'Train B-456', 'Train C-789', 'Train D-012'];
   
   // Weight data
-  double _currentWeight = 0.0; // Initialize with 0.0 instead of 42.5
-  double _minWeightLimit = 20.0; // tons
-  double _maxWeightLimit = 50.0; // tons
+  double _currentWeight = 0.0;
+  double _minWeightLimit = 20.0;
+  double _maxWeightLimit = 50.0;
   bool _isOverweight = false;
   bool _isUnderweight = false;
   bool _isClearanceGiven = false;
-  bool _sendAlertEnabled = false; // New property for alert switch
+  bool _sendAlertEnabled = false;
   
   // Data loading states
   bool _isLoadingWeight = true;
@@ -49,9 +49,16 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   
   // Map controller
   GoogleMapController? _mapController;
-  final LatLng _trainLocation = const LatLng(28.6139, 77.2090); // Delhi coordinates as example
+  final LatLng _trainLocation = const LatLng(28.6139, 77.2090); // Delhi coordinates
   
-  // Weight history data for graph - initialize with zeros
+  // Location permission state
+  bool _hasLocationPermission = false;
+  bool _isRequestingPermission = false;
+  
+  // Web map element ID
+  String? _webMapElementId;
+  
+  // Weight history data for graph
   List<FlSpot> _weightData = [
     const FlSpot(0, 0),
     const FlSpot(1, 0),
@@ -86,11 +93,70 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     );
     _animationController.forward();
     
+    // Generate a unique ID for the web map element
+    if (kIsWeb) {
+      _webMapElementId = 'google-map-${DateTime.now().millisecondsSinceEpoch}';
+    }
+    
+    // Check location permission
+    _checkLocationPermission();
+    
     // Fetch initial data
     _fetchInitialData();
     
     // Start periodic updates
     _startPeriodicUpdates();
+  }
+  
+  // Check location permission
+  Future<void> _checkLocationPermission() async {
+    if (kIsWeb) {
+      // First check if we already have permission from earlier
+      bool hasPermission = AppConfig.hasLocationPermission;
+      
+      if (!hasPermission) {
+        // If not, request permission
+        setState(() {
+          _isRequestingPermission = true;
+        });
+        
+        hasPermission = await AppConfig.requestLocationPermission();
+        
+        setState(() {
+          _hasLocationPermission = hasPermission;
+          _isRequestingPermission = false;
+        });
+        
+        // Show appropriate message
+        if (hasPermission) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Location permission granted'),
+                backgroundColor: Colors.green.shade600,
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Location permission denied. Some features may not work.'),
+                backgroundColor: Colors.orange.shade600,
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      } else {
+        setState(() {
+          _hasLocationPermission = true;
+        });
+      }
+    }
   }
   
   // Fetch initial data from Blynk
@@ -123,12 +189,12 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         setState(() {
           _weightData = spots;
           _isLoadingHistory = false;
-          _isInitialLoad = false; // Set initial load to false after data is loaded
+          _isInitialLoad = false;
         });
       } else if (mounted) {
         setState(() {
           _isLoadingHistory = false;
-          _isInitialLoad = false; // Set initial load to false even if no history
+          _isInitialLoad = false;
         });
       }
     } catch (e) {
@@ -137,7 +203,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         setState(() {
           _isLoadingWeight = false;
           _isLoadingHistory = false;
-          _isInitialLoad = false; // Set initial load to false even on error
+          _isInitialLoad = false;
         });
       }
     }
@@ -145,7 +211,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   
   // Start periodic updates
   void _startPeriodicUpdates() {
-    // Update every 1 second instead of 5
     _updateTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
       try {
         // Get current weight
@@ -202,7 +267,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     });
   }
   
-  // Improve the toggleClearance method with better error handling
   void _toggleClearance() {
     // Don't allow clearance to be given if weight is out of range
     if (_isOverweight || _isUnderweight) {
@@ -311,7 +375,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     });
   }
   
-  // Improve the toggleSendAlert method with better error handling
   void _toggleSendAlert() {
     // Show loading indicator
     ScaffoldMessenger.of(context).showSnackBar(
@@ -352,46 +415,46 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                 Text(_sendAlertEnabled 
                   ? 'Alerts enabled and sent to monitoring system' 
                   : 'Alerts disabled'
-              ),
-            ],
+                ),
+              ],
+            ),
+            backgroundColor: Colors.blue.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 2),
           ),
-          backgroundColor: Colors.blue.shade600,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+        );
+      }
+    }).catchError((error) {
+      print('Error updating alert status: $error');
+      if (mounted) {
+        setState(() {
+          // Revert state if there was an error
+          _sendAlertEnabled = !_sendAlertEnabled;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 12),
+                Text('Failed to update alert status: ${error.toString()}'),
+              ],
+            ),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 3),
           ),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
-  }).catchError((error) {
-    print('Error updating alert status: $error');
-    if (mounted) {
-      setState(() {
-        // Revert state if there was an error
-        _sendAlertEnabled = !_sendAlertEnabled;
-      });
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: 12),
-              Text('Failed to update alert status: ${error.toString()}'),
-            ],
-          ),
-          backgroundColor: Colors.red.shade600,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    }
-  });
-}
+        );
+      }
+    });
+  }
   
   void _dismissAlert() {
     setState(() {
@@ -400,13 +463,76 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     });
   }
   
-  // ignore: unused_element
-  void _updateWeightLimits(double min, double max) {
+  // Request location permission
+  Future<void> _requestLocationPermission() async {
     setState(() {
-      _minWeightLimit = min;
-      _maxWeightLimit = max;
-      _checkWeightStatus();
+      _isRequestingPermission = true;
     });
+    
+    bool hasPermission = await AppConfig.requestLocationPermission();
+    
+    setState(() {
+      _hasLocationPermission = hasPermission;
+      _isRequestingPermission = false;
+    });
+    
+    if (hasPermission) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Location permission granted'),
+          backgroundColor: Colors.green.shade600,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      
+      // Initialize the map if we're on web
+      if (kIsWeb && _webMapElementId != null) {
+        _initializeWebMap();
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Location permission denied'),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+  
+  // Initialize the web map using JavaScript
+  void _initializeWebMap() {
+    if (kIsWeb && _webMapElementId != null && _hasLocationPermission) {
+      // Use a small delay to ensure the DOM element is ready
+      Future.delayed(const Duration(milliseconds: 500), () {
+        try {
+          // Call the JavaScript function to initialize the map
+          _callJsMethod('initializeMap', [
+            _webMapElementId,
+            _trainLocation.latitude,
+            _trainLocation.longitude,
+            _selectedTrain
+          ]);
+          print('Web map initialization requested for element: $_webMapElementId');
+        } catch (e) {
+          print('Error initializing web map: $e');
+        }
+      });
+    }
+  }
+  
+  // Safe method to call JS methods that works on both web and mobile
+  dynamic _callJsMethod(String method, List<dynamic> args) {
+    if (kIsWeb) {
+      try {
+        return js_util.callMethod(js_util.globalThis, method, args);
+      } catch (e) {
+        print("JS method call error: $e");
+      }
+    }
+    return null;
   }
 
   @override
@@ -841,6 +967,11 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         onTap: () {
           setState(() {
             _selectedTabIndex = index;
+            
+            // If selecting location tab, check permission
+            if (index == 2 && !_hasLocationPermission && !_isRequestingPermission) {
+              _requestLocationPermission();
+            }
           });
         },
         child: Container(
@@ -916,7 +1047,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                 children: [
                   _buildCompactWeightCard(),
                   _buildCompactClearanceCard(),
-                  _buildCompactAlertCard(), // New alert card
+                  _buildCompactAlertCard(),
                   _buildCompactActionsCard(),
                 ],
               ),
@@ -1006,9 +1137,206 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         constraints: const BoxConstraints(maxWidth: 1200),
         child: Column(
           children: [
-            // GPS Location Map
-            Expanded(
-              child: _buildLocationCard(),
+            // Location permission request if needed
+            if (!_hasLocationPermission && !_isRequestingPermission)
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.amber.shade200),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_off,
+                          color: Colors.amber.shade700,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Location permission is required to show the map',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.amber.shade700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.location_on),
+                      label: const Text('Grant Location Permission'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber.shade600,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      ),
+                      onPressed: _requestLocationPermission,
+                    ),
+                  ],
+                ),
+              ),
+            
+            // Show loading indicator while requesting permission
+            if (_isRequestingPermission)
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.blue.shade700,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Requesting location permission...',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.blue.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            
+            // GPS Location Map - Using a different approach for web vs mobile
+            Container(
+              height: 400, // Fixed height for the map
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: _hasLocationPermission
+                  ? kIsWeb
+                    // For web, show a placeholder with instructions
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.map_outlined,
+                              size: 64,
+                              color: Colors.blue.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Map View',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue.shade700,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Location: Delhi Central Station (${_trainLocation.latitude}, ${_trainLocation.longitude})',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton.icon(
+                              icon: const Icon(Icons.open_in_new),
+                              label: const Text('Open in Google Maps'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue.shade600,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                              ),
+                              onPressed: () {
+                                // Open Google Maps in a new tab
+                                if (kIsWeb) {
+                                  _callJsMethod('open', [
+                                    'https://www.google.com/maps/search/?api=1&query=${_trainLocation.latitude},${_trainLocation.longitude}'
+                                  ]);
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      )
+                    // For mobile, use the GoogleMap widget
+                    : GoogleMap(
+                        initialCameraPosition: CameraPosition(
+                          target: _trainLocation,
+                          zoom: 14,
+                        ),
+                        onMapCreated: (controller) {
+                          _mapController = controller;
+                        },
+                        markers: {
+                          Marker(
+                            markerId: const MarkerId('train'),
+                            position: _trainLocation,
+                            infoWindow: InfoWindow(
+                              title: _selectedTrain,
+                              snippet: 'Speed: 45 km/h, Direction: North',
+                            ),
+                            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+                          ),
+                        },
+                        myLocationEnabled: true,
+                        compassEnabled: true,
+                        zoomControlsEnabled: false,
+                      )
+                  : Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.map_outlined,
+                            size: 64,
+                            color: Colors.grey.shade400,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Map unavailable',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Please grant location permission to view the map',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+              ),
             ),
             
             const SizedBox(height: 16),
@@ -1278,7 +1606,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                 (_isOverweight || _isUnderweight)
                   ? 'Not Available'
                   : (_isClearanceGiven ? 'Revoke' : 'Give'),
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
                 ),
@@ -2104,48 +2432,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             ),
           ),
         ],
-      ),
-    );
-  }
-  
-  Widget _buildLocationCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: GoogleMap(
-          initialCameraPosition: CameraPosition(
-            target: _trainLocation,
-            zoom: 14,
-          ),
-          onMapCreated: (controller) {
-            _mapController = controller;
-          },
-          markers: {
-            Marker(
-              markerId: const MarkerId('train'),
-              position: _trainLocation,
-              infoWindow: InfoWindow(
-                title: _selectedTrain,
-                snippet: 'Speed: 45 km/h, Direction: North',
-              ),
-              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-            ),
-          },
-          myLocationEnabled: true,
-          compassEnabled: true,
-          zoomControlsEnabled: false,
-        ),
       ),
     );
   }

@@ -6,7 +6,7 @@ import 'firebase_options.dart';
 import 'login_page.dart';
 import 'signup_page.dart';
 import 'dashboard.dart';
-import 'config.dart'; // Import to check config values
+import 'config.dart';
 
 // Global variable to track initialization state
 bool isInitialized = false;
@@ -30,11 +30,21 @@ void main() async {
 
     // Check if Firebase is already initialized to avoid the "already exists" error
     if (Firebase.apps.isEmpty) {
-      // Initialize Firebase only if it's not already initialized
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-      print("Firebase initialized successfully");
+      try {
+        // Initialize Firebase only if it's not already initialized
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+        print("Firebase initialized successfully");
+      } catch (e) {
+        print("Error initializing Firebase: $e");
+        // Continue anyway, we'll handle auth state in the app
+        if (e.toString().contains('duplicate-app')) {
+          print("Ignoring duplicate app error, Firebase is already initialized");
+        } else {
+          initError = "Firebase error: ${e.toString()}";
+        }
+      }
     } else {
       print("Firebase was already initialized");
     }
@@ -81,7 +91,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Firebase Auth',
+      title: 'Vector Shield',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
@@ -193,7 +203,7 @@ class AuthWrapper extends StatefulWidget {
 
 class _AuthWrapperState extends State<AuthWrapper> {
   bool _timeoutReached = false;
-
+  
   @override
   void initState() {
     super.initState();
@@ -213,12 +223,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         // If timeout reached and still waiting, show login page
-        if ((snapshot.connectionState == ConnectionState.waiting) &&
-            _timeoutReached) {
+        if ((snapshot.connectionState == ConnectionState.waiting) && _timeoutReached) {
           print("Auth timeout reached, showing login page");
           return const LoginPage();
         }
-
+        
         // Show loading indicator while waiting for auth state
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
@@ -242,13 +251,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
             ),
           );
         }
-
+        
         // Check if user is logged in
         if (snapshot.hasData) {
           print("User is logged in: ${snapshot.data?.uid}");
           return const DashboardPage();
         }
-
+        
         // User is not logged in
         print("User is not logged in, showing login page");
         return const LoginPage();
