@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:async';
 import 'firebase_options.dart';
 import 'login_page.dart';
@@ -25,7 +24,7 @@ void main() async {
     // Initialize AppConfig first - this will try to load .env
     // but won't fail if it doesn't exist (like on Vercel)
     await AppConfig.initialize();
-    
+
     // Debug: Print config values to help diagnose issues
     AppConfig.debugPrintConfig();
 
@@ -39,7 +38,7 @@ void main() async {
     } else {
       print("Firebase was already initialized");
     }
-    
+
     isInitialized = true;
   } catch (e) {
     print("Error during initialization: $e");
@@ -64,7 +63,8 @@ class LoadingApp extends StatelessWidget {
             children: [
               const CircularProgressIndicator(),
               const SizedBox(height: 20),
-              const Text("Loading application...", 
+              const Text(
+                "Loading application...",
                 style: TextStyle(fontSize: 16),
               ),
             ],
@@ -104,7 +104,10 @@ class MyApp extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             borderSide: const BorderSide(color: Colors.red, width: 2),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
@@ -115,9 +118,10 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: !isInitialized 
-          ? InitErrorScreen(error: initError) 
-          : const AuthWrapper(),
+      home:
+          !isInitialized
+              ? InitErrorScreen(error: initError)
+              : const AuthWrapper(),
       routes: {
         '/login': (context) => const LoginPage(),
         '/signup': (context) => const SignupPage(),
@@ -130,7 +134,7 @@ class MyApp extends StatelessWidget {
 // Screen to show initialization errors
 class InitErrorScreen extends StatelessWidget {
   final String? error;
-  
+
   const InitErrorScreen({super.key, this.error});
 
   @override
@@ -142,11 +146,7 @@ class InitErrorScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.error_outline,
-                color: Colors.red.shade700,
-                size: 60,
-              ),
+              Icon(Icons.error_outline, color: Colors.red.shade700, size: 60),
               const SizedBox(height: 20),
               Text(
                 "Application Initialization Error",
@@ -159,7 +159,8 @@ class InitErrorScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                error ?? "Failed to initialize the application. Please check your configuration.",
+                error ??
+                    "Failed to initialize the application. Please check your configuration.",
                 style: const TextStyle(fontSize: 16),
                 textAlign: TextAlign.center,
               ),
@@ -168,8 +169,8 @@ class InitErrorScreen extends StatelessWidget {
                 onPressed: () {
                   // Try to navigate to login page anyway
                   Navigator.pushReplacement(
-                    context, 
-                    MaterialPageRoute(builder: (context) => const LoginPage())
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
                   );
                 },
                 child: const Text("Try to continue anyway"),
@@ -192,7 +193,7 @@ class AuthWrapper extends StatefulWidget {
 
 class _AuthWrapperState extends State<AuthWrapper> {
   bool _timeoutReached = false;
-  
+
   @override
   void initState() {
     super.initState();
@@ -212,11 +213,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         // If timeout reached and still waiting, show login page
-        if ((snapshot.connectionState == ConnectionState.waiting) && _timeoutReached) {
+        if ((snapshot.connectionState == ConnectionState.waiting) &&
+            _timeoutReached) {
           print("Auth timeout reached, showing login page");
           return const LoginPage();
         }
-        
+
         // Show loading indicator while waiting for auth state
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
@@ -226,11 +228,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
                 children: [
                   const CircularProgressIndicator(),
                   const SizedBox(height: 16),
-                  const Text("Checking authentication status...", 
+                  const Text(
+                    "Checking authentication status...",
                     style: TextStyle(fontSize: 16),
                   ),
                   const SizedBox(height: 8),
-                  Text("Please wait...", 
+                  Text(
+                    "Please wait...",
                     style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                 ],
@@ -238,13 +242,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
             ),
           );
         }
-        
+
         // Check if user is logged in
         if (snapshot.hasData) {
           print("User is logged in: ${snapshot.data?.uid}");
           return const DashboardPage();
         }
-        
+
         // User is not logged in
         print("User is not logged in, showing login page");
         return const LoginPage();
@@ -252,4 +256,3 @@ class _AuthWrapperState extends State<AuthWrapper> {
     );
   }
 }
-

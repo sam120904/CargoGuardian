@@ -10,13 +10,11 @@
 .history
 .svn/
 .swiftpm/
-build/app/
-build/firebase_auth/
-build/firebase_core/
-build/google_maps_flutter_android/
-build/flutter_plugin_android_lifecycle/
-build/reports/problems/problems-report.html
-migrate_working_dir/
+# Ignore everything in the build folder
+/build/*
+
+# Except for build/web
+!/build/web/
 
 # IntelliJ related
 *.iml
