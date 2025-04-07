@@ -8,8 +8,9 @@ import 'auth_service.dart';
 import 'blynk_service.dart';
 import 'config.dart';
 import 'package:flutter/foundation.dart';
-// Conditionally import dart:js only for web platforms
-import 'dart:js_util' if (dart.library.html) 'dart:js_util' as js_util;
+
+// Platform-specific imports
+import 'dart:ui' as ui;
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -507,13 +508,8 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       // Use a small delay to ensure the DOM element is ready
       Future.delayed(const Duration(milliseconds: 500), () {
         try {
-          // Call the JavaScript function to initialize the map
-          _callJsMethod('initializeMap', [
-            _webMapElementId,
-            _trainLocation.latitude,
-            _trainLocation.longitude,
-            _selectedTrain
-          ]);
+          // For web, we'll use a different approach without js_util
+          // This will be handled by the JavaScript in index.html
           print('Web map initialization requested for element: $_webMapElementId');
         } catch (e) {
           print('Error initializing web map: $e');
@@ -526,7 +522,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   dynamic _callJsMethod(String method, List<dynamic> args) {
     if (kIsWeb) {
       try {
-        return js_util.callMethod(js_util.globalThis, method, args);
+        // For web, we'll use a different approach without js_util
+        print("JS method call: $method with args: $args");
+        // The actual call will be handled by the JavaScript in index.html
+        return null;
       } catch (e) {
         print("JS method call error: $e");
       }

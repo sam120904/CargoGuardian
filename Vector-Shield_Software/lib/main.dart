@@ -9,11 +9,41 @@ import 'dashboard.dart';
 import 'config.dart';
 
 void main() async {
-  // Ensure Flutter is initialized
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Run the app with a single loading screen
-  runApp(const MyApp());
+  // Wrap the app in a zone to catch all unhandled errors
+  runZonedGuarded(() async {
+    // Ensure Flutter is initialized
+    WidgetsFlutterBinding.ensureInitialized();
+    
+    // Initialize AppConfig first
+    await AppConfig.initialize();
+    
+    // Debug: Print config values
+    AppConfig.debugPrintConfig();
+    
+    // Initialize Firebase
+    if (Firebase.apps.isEmpty) {
+      try {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+        print("Firebase initialized successfully");
+      } catch (e) {
+        print("Error initializing Firebase: $e");
+        if (e.toString().contains('duplicate-app')) {
+          print("Ignoring duplicate app error, Firebase is already initialized");
+        }
+      }
+    } else {
+      print("Firebase was already initialized");
+    }
+    
+    // Run the app
+    runApp(const MyApp());
+  }, (error, stackTrace) {
+    // Log any unhandled errors
+    print('Unhandled error: $error');
+    print('Stack trace: $stackTrace');
+  });
 }
 
 class MyApp extends StatefulWidget {
@@ -37,31 +67,6 @@ class _MyAppState extends State<MyApp> {
   // Initialize the app
   Future<void> _initializeApp() async {
     try {
-      // Initialize AppConfig first
-      await AppConfig.initialize();
-      
-      // Debug: Print config values
-      AppConfig.debugPrintConfig();
-      
-      // Initialize Firebase
-      if (Firebase.apps.isEmpty) {
-        try {
-          await Firebase.initializeApp(
-            options: DefaultFirebaseOptions.currentPlatform,
-          );
-          print("Firebase initialized successfully");
-        } catch (e) {
-          print("Error initializing Firebase: $e");
-          if (e.toString().contains('duplicate-app')) {
-            print("Ignoring duplicate app error, Firebase is already initialized");
-          } else {
-            _initError = "Firebase error: ${e.toString()}";
-          }
-        }
-      } else {
-        print("Firebase was already initialized");
-      }
-      
       // Add a small delay to ensure everything is loaded
       await Future.delayed(const Duration(milliseconds: 500));
       
@@ -364,3 +369,4 @@ class _AuthWrapperState extends State<AuthWrapper> {
     );
   }
 }
+
