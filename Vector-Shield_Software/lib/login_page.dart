@@ -56,43 +56,53 @@ class _LoginPageState extends State<LoginPage>
 
         await _authService.signInWithEmailAndPassword(email, password);
 
-        // Show success message
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.check_circle, color: Colors.white),
-                  const SizedBox(width: 12),
-                  const Text('Login successful!'),
-                ],
-              ),
-              backgroundColor: Colors.green.shade600,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              duration: const Duration(seconds: 2),
-            ),
-          );
+        // Check if widget is still mounted before using context
+        if (!mounted) return;
 
-          // Navigate to dashboard instead of home page
-          Future.delayed(const Duration(seconds: 1), () {
-            Navigator.pushReplacementNamed(context, '/dashboard');
-          });
-        }
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                const Text('Login successful!'),
+              ],
+            ),
+            backgroundColor: Colors.green.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        // Navigate to dashboard instead of home page
+        // Use a local variable to capture the context before the async gap
+        final currentContext = context;
+        Future.delayed(const Duration(seconds: 1), () {
+          // Check if widget is still mounted before navigating
+          if (mounted) {
+            Navigator.pushReplacementNamed(currentContext, '/dashboard');
+          }
+        });
       } on FirebaseAuthException catch (e) {
+        if (!mounted) return;
         setState(() {
           _errorMessage = _getErrorMessage(e.code);
         });
       } catch (e) {
+        if (!mounted) return;
         setState(() {
           _errorMessage = 'An unexpected error occurred';
         });
       } finally {
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
@@ -305,9 +315,7 @@ class _LoginPageState extends State<LoginPage>
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: 0.5,
-                                      color:
-                                          Colors
-                                              .white, // Add this line to set text color to white
+                                      color: Colors.white,
                                     ),
                                   ),
                         ),
@@ -599,7 +607,9 @@ class _LoginPageState extends State<LoginPage>
                               });
                               // Close dialog after 3 seconds on success
                               Future.delayed(const Duration(seconds: 3), () {
-                                Navigator.of(context).pop();
+                                if (context.mounted) {
+                                  Navigator.of(context).pop();
+                                }
                               });
                             } on FirebaseAuthException catch (e) {
                               setState(() {

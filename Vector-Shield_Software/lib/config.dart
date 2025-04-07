@@ -9,6 +9,9 @@ class AppConfig {
   // Static initialization flag to track if we've tried loading .env
   static bool _didTryLoadEnv = false;
   static bool _didTryLoadJsEnv = false;
+  
+  // Cache for environment variables to prevent repeated JS calls
+  static final Map<String, String> _envCache = {};
 
   // Method to initialize config - call this before accessing any values
   static Future<void> initialize() async {
@@ -44,9 +47,15 @@ class AppConfig {
   static void _loadJsEnvironmentVariables() {
     if (kIsWeb) {
       try {
-        // Check if window object has our environment variables
-        final firebaseApiKey = _getJsEnv('FIREBASE_API_KEY');
-        if (firebaseApiKey != null && firebaseApiKey.isNotEmpty) {
+        // Pre-cache common environment variables to avoid repeated JS calls
+        _envCache['FIREBASE_API_KEY'] = _getJsEnv('FIREBASE_API_KEY') ?? '';
+        _envCache['FIREBASE_APP_ID'] = _getJsEnv('FIREBASE_APP_ID') ?? '';
+        _envCache['FIREBASE_PROJECT_ID'] = _getJsEnv('FIREBASE_PROJECT_ID') ?? '';
+        _envCache['BLYNK_TEMPLATE_ID'] = _getJsEnv('BLYNK_TEMPLATE_ID') ?? '';
+        _envCache['BLYNK_AUTH_TOKEN'] = _getJsEnv('BLYNK_AUTH_TOKEN') ?? '';
+        
+        if (_envCache['FIREBASE_API_KEY']!.isNotEmpty && 
+            _envCache['FIREBASE_API_KEY'] != '%FIREBASE_API_KEY%') {
           print("Successfully loaded environment variables from JavaScript");
         }
       } catch (e) {
@@ -59,8 +68,24 @@ class AppConfig {
   static String? _getJsEnv(String key) {
     if (kIsWeb) {
       try {
-        // Use a safe approach to access JS variables
-        return _getJsProperty(key);
+        // First try to access directly from window
+        final directValue = js_util.getProperty(js_util.globalThis, key);
+        if (directValue != null && directValue is String && 
+            directValue.isNotEmpty && directValue != '%$key%') {
+          return directValue;
+        }
+        
+        // If not found directly, try using the getEnvVar function
+        try {
+          if (js_util.hasProperty(js_util.globalThis, 'getEnvVar')) {
+            final value = js_util.callMethod(js_util.globalThis, 'getEnvVar', [key]);
+            if (value != null && value is String && value.isNotEmpty && value != '%$key%') {
+              return value;
+            }
+          }
+        } catch (e) {
+          print("Error calling getEnvVar: $e");
+        }
       } catch (e) {
         print("Error getting $key from JS: $e");
       }
@@ -68,45 +93,21 @@ class AppConfig {
     return null;
   }
 
-  // Safe method to get JS property that works on both web and mobile
-  static String? _getJsProperty(String key) {
-    if (kIsWeb) {
-      try {
-        // This is a safe way to check if we're on web and can access JS
-        return _callJsMethod('getEnvVar', [key]);
-      } catch (e) {
-        print("JS access error: $e");
-      }
-    }
-    return null;
-  }
-
-  // Safe method to call JS methods that works on both web and mobile
-  static dynamic _callJsMethod(String method, List<dynamic> args) {
-    if (kIsWeb) {
-      try {
-        // Use js_util instead of dart:js directly
-        return js_util.callMethod(js_util.globalThis, method, args);
-      } catch (e) {
-        print("JS method call error: $e");
-      }
-    }
-    return null;
-  }
-
   // Helper method to get environment variables with fallbacks
   static String _getEnv(String key, String fallback) {
-    // First check if we're on web and can get from JavaScript
-    if (kIsWeb) {
-      final jsValue = _getJsEnv(key);
-      if (jsValue != null && jsValue.isNotEmpty && jsValue != "%$key%") {
-        return jsValue;
+    // First check cache to avoid repeated JS calls
+    if (_envCache.containsKey(key)) {
+      final cachedValue = _envCache[key];
+      if (cachedValue != null && cachedValue.isNotEmpty && cachedValue != '%$key%') {
+        return cachedValue;
       }
     }
-
+    
     // Then check dotenv
     final envValue = dotenv.env[key];
     if (envValue != null && envValue.isNotEmpty) {
+      // Cache the value for future use
+      _envCache[key] = envValue;
       return envValue;
     }
 
@@ -140,9 +141,12 @@ class AppConfig {
   static bool get hasLocationPermission {
     if (kIsWeb) {
       try {
-        final hasPermission = _callJsMethod('getLocationPermission', []);
-        if (hasPermission != null) {
-          return hasPermission as bool;
+        if (js_util.hasProperty(js_util.globalThis, 'getLocationPermission')) {
+          final hasPermission = js_util.callMethod(
+            js_util.globalThis, 'getLocationPermission', []);
+          if (hasPermission != null) {
+            return hasPermission as bool;
+          }
         }
       } catch (e) {
         print("Error checking location permission: $e");
@@ -158,15 +162,24 @@ class AppConfig {
         final completer = Completer<bool>();
         
         // Use JavaScript to request location permission
-        _callJsMethod('requestLocationPermission', []);
+        if (js_util.hasProperty(js_util.globalThis, 'requestLocationPermission')) {
+          js_util.callMethod(js_util.globalThis, 'requestLocationPermission', []);
+        } else {
+          print("requestLocationPermission not found in global scope");
+        }
         
         // Wait a bit for the permission dialog to be handled
         await Future.delayed(const Duration(seconds: 2));
         
         // Check if permission was granted
-        final hasPermission = _callJsMethod('getLocationPermission', []);
-        if (hasPermission != null && hasPermission as bool) {
-          completer.complete(true);
+        if (js_util.hasProperty(js_util.globalThis, 'getLocationPermission')) {
+          final hasPermission = js_util.callMethod(
+            js_util.globalThis, 'getLocationPermission', []);
+          if (hasPermission != null && hasPermission as bool) {
+            completer.complete(true);
+          } else {
+            completer.complete(false);
+          }
         } else {
           completer.complete(false);
         }
@@ -212,4 +225,3 @@ class AppConfig {
     }
   }
 }
-

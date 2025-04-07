@@ -8,10 +8,8 @@
   <meta name="description" content="Vector Shield - Train Monitoring System">
 
   <!-- iOS meta tags & icons -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <!-- Replace deprecated apple-mobile-web-app-capable with mobile-web-app-capable -->
-  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Vector Shield">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
@@ -22,10 +20,7 @@
   <title>Vector Shield</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- Add Google Maps API with callback -->
-  <script src="https://maps.googleapis.com/maps/api/js?callback=initGoogleMapsCallback"></script>
-
-  <!-- Add error handling for Flutter initialization -->
+  <!-- Define JavaScript functions BEFORE they are used -->
   <script>
     // The value below is injected by flutter build, do not touch.
     var serviceWorkerVersion = null;
@@ -35,62 +30,68 @@
     window.googleMapsLoaded = false;
     window.mapInstances = {};
     
-    // Google Maps callback
-    function initGoogleMapsCallback() {
+    // Google Maps callback - Define this BEFORE loading the Google Maps API
+    window.initGoogleMapsCallback = function() {
       console.log("Google Maps API loaded successfully");
       window.googleMapsLoaded = true;
-    }
+    };
     
     // Function to get environment variables
-    function getEnvVar(name) {
-      if (window[name]) {
+    window.getEnvVar = function(name) {
+      // Check if the variable exists in window object
+      if (window[name] !== undefined && window[name] !== null && 
+          window[name] !== "" && window[name] !== `%${name}%`) {
         return window[name];
       }
       return "";
-    }
+    };
     
     // Function to get location permission status
-    function getLocationPermission() {
+    window.getLocationPermission = function() {
       return window.hasLocationPermission || false;
-    }
+    };
     
     // Function to request location permission
-    function requestLocationPermission() {
+    window.requestLocationPermission = function() {
       if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          function(position) {
-            console.log("Location permission granted");
-            window.hasLocationPermission = true;
-          },
-          function(error) {
-            console.log("Location permission denied or error:", error.message);
-            window.hasLocationPermission = false;
-          },
-          { enableHighAccuracy: true }
-        );
+        try {
+          navigator.geolocation.getCurrentPosition(
+            function(position) {
+              console.log("Location permission granted");
+              window.hasLocationPermission = true;
+            },
+            function(error) {
+              console.log("Location permission denied or error:", error.message);
+              window.hasLocationPermission = false;
+            },
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+          );
+        } catch (e) {
+          console.error("Error requesting location permission:", e);
+          window.hasLocationPermission = false;
+        }
       }
-    }
+    };
     
     // Function to initialize a map
-    function initializeMap(elementId, lat, lng, title) {
+    window.initializeMap = function(elementId, lat, lng, title) {
       if (!window.googleMapsLoaded) {
-        console.error("Google Maps not loaded yet");
+        console.log("Google Maps not loaded yet, will try again later");
+        setTimeout(function() {
+          window.initializeMap(elementId, lat, lng, title);
+        }, 1000);
         return;
       }
       
       try {
         console.log("Initializing map with ID:", elementId);
         
-        // Find the Flutter-created HTML element view
-        const mapContainer = document.querySelector('flt-platform-view');
+        // Find the map container by ID
+        const mapContainer = document.getElementById(elementId);
         if (!mapContainer) {
-          console.error("Map container not found");
+          console.error("Map container not found with ID:", elementId);
           return;
         }
-        
-        // Make sure the container has proper dimensions
-        mapContainer.style.width = '100%';
-        mapContainer.style.height = '100%';
         
         // Create a map instance
         const map = new google.maps.Map(mapContainer, {
@@ -102,6 +103,7 @@
           zoomControl: true
         });
         
+        // Add a marker
         const marker = new google.maps.Marker({
           position: { lat: lat, lng: lng },
           map: map,
@@ -118,13 +120,18 @@
       } catch (e) {
         console.error("Error initializing map:", e);
       }
-    }
+    };
 
     // Function to open a URL in a new tab
-    function open(url) {
-      window.open(url, '_blank');
-    }
+    window.open = function(url) {
+      if (url && typeof url === 'string') {
+        window.open(url, '_blank');
+      }
+    };
   </script>
+
+  <!-- Add Google Maps API with callback - AFTER defining the callback function -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDS3Qwxu0gTG5i0inF8V2-jdeFFhch9PSQ&callback=initGoogleMapsCallback" async></script>
 
   <!-- Add environment variables injection for Vercel -->
   <script>
@@ -215,8 +222,15 @@
   </div>
 
   <script>
-    // Request location permission early
-    setTimeout(requestLocationPermission, 2000);
+    // Request location permission after page loads
+    window.addEventListener('load', function() {
+      // Safe call to requestLocationPermission
+      if (typeof window.requestLocationPermission === 'function') {
+        setTimeout(window.requestLocationPermission, 2000);
+      } else {
+        console.error("requestLocationPermission function not defined");
+      }
+    });
     
     // Improved Flutter initialization with error handling
     window.addEventListener('load', function() {
@@ -226,15 +240,21 @@
       var retryButton = document.querySelector('#retry-button');
       
       function showError(message) {
-        loading.querySelector('.spinner').style.display = 'none';
-        loading.querySelector('.loading-text').style.display = 'none';
-        errorMessage.textContent = message || 'Failed to initialize the application.';
-        errorContainer.style.display = 'block';
+        if (loading) {
+          var spinner = loading.querySelector('.spinner');
+          var loadingText = loading.querySelector('.loading-text');
+          if (spinner) spinner.style.display = 'none';
+          if (loadingText) loadingText.style.display = 'none';
+        }
+        if (errorMessage) errorMessage.textContent = message || 'Failed to initialize the application.';
+        if (errorContainer) errorContainer.style.display = 'block';
       }
       
-      retryButton.addEventListener('click', function() {
-        window.location.reload();
-      });
+      if (retryButton) {
+        retryButton.addEventListener('click', function() {
+          window.location.reload();
+        });
+      }
 
       // Initialize Flutter with better error handling
       _flutter.loader.loadEntrypoint({
@@ -248,6 +268,20 @@
               renderer: 'html'
             });
             await appRunner.runApp();
+            
+            // Hide loading screen after app is loaded
+            if (loading) {
+              // Fade out loading screen
+              loading.style.transition = 'opacity 0.5s ease';
+              loading.style.opacity = '0';
+              
+              // Remove loading screen after fade out
+              setTimeout(function() {
+                if (loading && loading.parentNode) {
+                  loading.parentNode.removeChild(loading);
+                }
+              }, 500);
+            }
           } catch (e) {
             console.error('Flutter initialization error:', e);
             showError('Failed to initialize Flutter: ' + e.message);
@@ -261,4 +295,3 @@
   </script>
 </body>
 </html>
-

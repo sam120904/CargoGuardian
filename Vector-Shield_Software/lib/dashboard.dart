@@ -10,7 +10,6 @@ import 'config.dart';
 import 'package:flutter/foundation.dart';
 // Conditionally import dart:js only for web platforms
 import 'dart:js_util' if (dart.library.html) 'dart:js_util' as js_util;
-import 'dart:html' as html;
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
