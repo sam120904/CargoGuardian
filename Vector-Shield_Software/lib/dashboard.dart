@@ -8,9 +8,10 @@ import 'auth_service.dart';
 import 'blynk_service.dart';
 import 'config.dart';
 import 'package:flutter/foundation.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-// Platform-specific imports
-import 'dart:ui' as ui;
+// Conditionally import dart:html only for web
+import 'platform_imports.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -156,6 +157,12 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           _hasLocationPermission = true;
         });
       }
+    } else {
+      // For Android, we'll use the permission status from the location package
+      // This is handled by the GoogleMap widget automatically
+      setState(() {
+        _hasLocationPermission = true; // Assume true for now, will be checked by GoogleMap
+      });
     }
   }
   
@@ -518,19 +525,29 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     }
   }
   
-  // Safe method to call JS methods that works on both web and mobile
-  dynamic _callJsMethod(String method, List<dynamic> args) {
+  // Platform-safe method to open URLs
+  Future<void> _openUrl(String url) async {
     if (kIsWeb) {
-      try {
-        // For web, we'll use a different approach without js_util
-        print("JS method call: $method with args: $args");
-        // The actual call will be handled by the JavaScript in index.html
-        return null;
-      } catch (e) {
-        print("JS method call error: $e");
+      // For web, use the JavaScript bridge
+      PlatformSpecific.openUrlInBrowser(url);
+    } else {
+      // For Android, use url_launcher
+      final Uri uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        print('Could not launch $url');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Could not open map: $url'),
+              backgroundColor: Colors.red.shade600,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
     }
-    return null;
   }
 
   @override
@@ -1270,12 +1287,8 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                               ),
                               onPressed: () {
-                                // Open Google Maps in a new tab
-                                if (kIsWeb) {
-                                  _callJsMethod('open', [
-                                    'https://www.google.com/maps/search/?api=1&query=${_trainLocation.latitude},${_trainLocation.longitude}'
-                                  ]);
-                                }
+                                // Open Google Maps in a new tab using our platform-safe method
+                                _openUrl('https://www.google.com/maps/search/?api=1&query=${_trainLocation.latitude},${_trainLocation.longitude}');
                               },
                             ),
                           ],
@@ -2434,4 +2447,3 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     );
   }
 }
-

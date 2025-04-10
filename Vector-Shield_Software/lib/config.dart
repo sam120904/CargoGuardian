@@ -3,7 +3,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:async';
 
 // Platform-specific imports
-import 'dart:ui' as ui;
 
 class AppConfig {
   // Static initialization flag to track if we've tried loading .env
