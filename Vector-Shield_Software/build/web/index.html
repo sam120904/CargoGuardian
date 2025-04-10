@@ -23,7 +23,7 @@
   <!-- Define JavaScript functions BEFORE they are used -->
   <script>
     // The value below is injected by flutter build, do not touch.
-    const serviceWorkerVersion = "704980754";
+    const serviceWorkerVersion = "65223545";
     
     // Global variables
     window.hasLocationPermission = false;
@@ -112,10 +112,17 @@
       }
     };
 
-    // Function to open a URL in a new tab - FIXED to avoid recursion
-    window.openExternal = function(url) {
+    // FIXED: Function to open a URL in a new tab
+    // We're using a different name to avoid conflicts with the native window.open
+    window.openExternalUrl = function(url) {
+      console.log("openExternalUrl called with URL:", url);
       if (url && typeof url === 'string') {
-        window.open(url, '_blank');
+        // Use window.open directly to avoid recursion
+        const newWindow = window.open(url, '_blank');
+        // Focus the new window if possible
+        if (newWindow) {
+          newWindow.focus();
+        }
       }
     };
   </script>
@@ -271,4 +278,3 @@
   </script>
 </body>
 </html>
-

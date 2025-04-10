@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
+
 import 'firebase_options.dart';
-import 'login_page.dart';
-import 'signup_page.dart';
-import 'dashboard.dart';
-import 'config.dart';
+import 'config/config.dart';
+
+import 'auth/login_page.dart';
+import 'auth/signup_page.dart';
+import 'auth/auth_wrapper.dart';
+
+import 'dashboard/dashboard_page.dart';
+
 
 void main() async {
   // Wrap the app in a zone to catch all unhandled errors
