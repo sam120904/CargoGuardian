@@ -1,18 +1,93 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'dart:math' as math;
 import 'dart:async';
-
 import '../services/auth_service.dart';
 import '../services/blynk_service.dart';
 import '../config/config.dart';
+import 'package:flutter/foundation.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-// Dashboard tabs and widgets
+// Conditionally import dart:html only for web
+import '../platform/platform_imports.dart';
+import 'connection_indicator.dart';
 import 'overview_tab.dart';
 import 'analytics_tab.dart';
 import 'location_tab.dart';
-import 'connection_indicator.dart';
 
+// Data class to pass to tab components
+class DashboardData {
+  final String selectedTrain;
+  final List<String> trainOptions;
+  final double currentWeight;
+  final double minWeightLimit;
+  final double maxWeightLimit;
+  final bool isOverweight;
+  final bool isUnderweight;
+  final bool isClearanceGiven;
+  final bool sendAlertEnabled;
+  final bool isLoadingWeight;
+  final bool isLoadingHistory;
+  final bool hasLocationPermission;
+  final bool isRequestingPermission;
+  final String? webMapElementId;
+  final List<FlSpot> weightData;
+  final List<double> weightHistory;
+  final bool hasAlert;
+  final String alertMessage;
+  final ConnectionStatus connectionStatus;
+  final bool isBlinking;
+  final String errorMessage;
+
+  DashboardData({
+    required this.selectedTrain,
+    required this.trainOptions,
+    required this.currentWeight,
+    required this.minWeightLimit,
+    required this.maxWeightLimit,
+    required this.isOverweight,
+    required this.isUnderweight,
+    required this.isClearanceGiven,
+    required this.sendAlertEnabled,
+    required this.isLoadingWeight,
+    required this.isLoadingHistory,
+    required this.hasLocationPermission,
+    required this.isRequestingPermission,
+    this.webMapElementId,
+    required this.weightData,
+    required this.weightHistory,
+    required this.hasAlert,
+    required this.alertMessage,
+    required this.connectionStatus,
+    required this.isBlinking,
+    required this.errorMessage,
+  });
+}
+
+// Callbacks class to pass to tab components
+class DashboardCallbacks {
+  final VoidCallback toggleClearance;
+  final VoidCallback toggleSendAlert;
+  final VoidCallback dismissAlert;
+  final VoidCallback requestLocationPermission;
+  final VoidCallback fetchInitialData;
+  final Function(String) openUrl;
+  final Function(double) updateMinWeightLimit;
+  final Function(double) updateMaxWeightLimit;
+
+  DashboardCallbacks({
+    required this.toggleClearance,
+    required this.toggleSendAlert,
+    required this.dismissAlert,
+    required this.requestLocationPermission,
+    required this.fetchInitialData,
+    required this.openUrl,
+    required this.updateMinWeightLimit,
+    required this.updateMaxWeightLimit,
+  });
+}
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -48,10 +123,22 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   
   // Timer for periodic updates
   Timer? _updateTimer;
+  Timer? _connectionBlinkTimer;
+  Timer? _connectionCheckTimer;
+  
+  // Map controller
+  GoogleMapController? _mapController;
   
   // Location permission state
   bool _hasLocationPermission = false;
   bool _isRequestingPermission = false;
+  
+  // Web map element ID
+  String? _webMapElementId;
+  
+  // Weight history data for graph
+  List<FlSpot> _weightData = [];
+  List<double> _weightHistory = [];
   
   // Alert data
   bool _hasAlert = false;
@@ -62,14 +149,14 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   
   // Flag to prevent alert on initial load
   bool _isInitialLoad = true;
-
-  // IoT connection status
-  ConnectionStatus _connectionStatus = ConnectionStatus.checking;
-  Timer? _connectionBlinkTimer;
-  bool _blinkState = false;
   
-  // Weight history data for graph
-  List<double> _weightHistory = List.filled(6, 0.0);
+  // Connection status
+  ConnectionStatus _connectionStatus = ConnectionStatus.checking;
+  bool _isBlinking = false;
+  String _errorMessage = '';
+  
+  // Consecutive failure counter
+  int _consecutiveFailures = 0;
   
   @override
   void initState() {
@@ -86,6 +173,14 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     );
     _animationController.forward();
     
+    // Generate a unique ID for the web map element
+    if (kIsWeb) {
+      _webMapElementId = 'google-map-${DateTime.now().millisecondsSinceEpoch}';
+    }
+    
+    // Initialize weight data with zeros
+    _initializeWeightData();
+    
     // Check location permission
     _checkLocationPermission();
     
@@ -94,52 +189,18 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     
     // Start periodic updates
     _startPeriodicUpdates();
-
-    // Start connection indicator blinking
+    
+    // Start connection status blinking
     _startConnectionBlinking();
+    
+    // Start connection status check timer
+    _startConnectionCheckTimer();
   }
-
-  // Start the connection indicator blinking
-  void _startConnectionBlinking() {
-    // Start with checking status
-    setState(() {
-      _connectionStatus = ConnectionStatus.checking;
-    });
-
-    // Create a timer that toggles the blink state every 500ms
-    _connectionBlinkTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
-      setState(() {
-        _blinkState = !_blinkState;
-      });
-    });
-
-    // After 2 seconds, move to connecting status
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          _connectionStatus = ConnectionStatus.connecting;
-        });
-        
-        // After 3 more seconds, check if we have weight data to determine connection
-        Future.delayed(const Duration(seconds: 3), () {
-          if (mounted) {
-            setState(() {
-              if (_isLoadingWeight) {
-                // Still loading, connection failed
-                _connectionStatus = ConnectionStatus.disconnected;
-              } else {
-                // Data loaded, connection successful
-                _connectionStatus = ConnectionStatus.connected;
-                
-                // Stop blinking for connected state
-                _connectionBlinkTimer?.cancel();
-                _blinkState = false;
-              }
-            });
-          }
-        });
-      }
-    });
+  
+  void _initializeWeightData() {
+    // Initialize weight data with zeros
+    _weightData = List.generate(6, (index) => FlSpot(index.toDouble(), 0.0));
+    _weightHistory = List.generate(6, (index) => 0.0);
   }
   
   // Check location permission
@@ -191,10 +252,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         });
       }
     } else {
-      // For Android, we'll use the permission status from the location package
+      // For Android, we'll request permission when the location tab is selected
       // This is handled by the GoogleMap widget automatically
       setState(() {
-        _hasLocationPermission = true; // Assume true for now, will be checked by GoogleMap
+        _hasLocationPermission = false; // Will be requested when needed
       });
     }
   }
@@ -204,6 +265,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     setState(() {
       _isLoadingWeight = true;
       _isLoadingHistory = true;
+      _connectionStatus = ConnectionStatus.connecting;
     });
     
     try {
@@ -214,11 +276,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           _currentWeight = weight;
           _isLoadingWeight = false;
           _checkWeightStatus();
-          
-          // Update connection status based on successful data fetch
           _connectionStatus = ConnectionStatus.connected;
-          _connectionBlinkTimer?.cancel();
-          _blinkState = false;
+          _errorMessage = '';
+          _consecutiveFailures = 0; // Reset failure counter on success
         });
       }
       
@@ -226,11 +286,15 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       try {
         final history = await _blynkService.getWeightHistory();
         if (history.isNotEmpty && mounted) {
+          // Convert history to FlSpot list for the chart
+          final spots = <FlSpot>[];
+          for (int i = 0; i < history.length && i < 6; i++) {
+            spots.add(FlSpot(i.toDouble(), history[i]));
+          }
+          
           setState(() {
-            _weightHistory = history.take(6).toList();
-            while (_weightHistory.length < 6) {
-              _weightHistory.add(0.0);
-            }
+            _weightData = spots;
+            _weightHistory = history;
             _isLoadingHistory = false;
             _isInitialLoad = false;
           });
@@ -240,12 +304,25 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             _isInitialLoad = false;
           });
         }
-      } catch (e) {
-        print('Failed to load weight history: $e');
+      } catch (historyError) {
+        print('Error fetching weight history: $historyError');
         if (mounted) {
           setState(() {
             _isLoadingHistory = false;
             _isInitialLoad = false;
+            
+            // Check if it's a reports limit error
+            if (historyError.toString().contains('Reports limit reached')) {
+              _errorMessage = 'Reports limit reached. One device can send only 24 reports per day';
+              // Don't change connection status for reports limit error
+            } else if (historyError.toString().contains('No data')) {
+              _errorMessage = 'No weight history data available';
+              // Don't change connection status for no data error
+            } else {
+              _errorMessage = 'Failed to load weight history';
+              _connectionStatus = ConnectionStatus.disconnected;
+              _consecutiveFailures++;
+            }
           });
         }
       }
@@ -256,17 +333,47 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           _isLoadingWeight = false;
           _isLoadingHistory = false;
           _isInitialLoad = false;
-          
-          // Update connection status based on failed data fetch
           _connectionStatus = ConnectionStatus.disconnected;
+          _errorMessage = 'Failed to connect to IoT device';
+          _consecutiveFailures++;
+          
+          // Reset weight to zero when IoT is offline
+          _currentWeight = 0.0;
+          _checkWeightStatus();
         });
       }
     }
   }
   
+  // Start connection check timer
+  void _startConnectionCheckTimer() {
+    _connectionCheckTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      // If we have consecutive failures, stop trying to update weight
+      if (_consecutiveFailures >= 3) {
+        _updateTimer?.cancel();
+        setState(() {
+          _connectionStatus = ConnectionStatus.disconnected;
+          _errorMessage = 'IoT device is offline';
+          
+          // Reset weight to zero when IoT is offline
+          _currentWeight = 0.0;
+          _checkWeightStatus();
+        });
+      }
+    });
+  }
+  
   // Start periodic updates
   void _startPeriodicUpdates() {
-    _updateTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+    // Cancel existing timer if any
+    _updateTimer?.cancel();
+    
+    _updateTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+      // Don't update if we have consecutive failures
+      if (_consecutiveFailures >= 3) {
+        return;
+      }
+      
       try {
         // Get current weight
         final weight = await _blynkService.getCurrentWeight();
@@ -275,36 +382,59 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             _currentWeight = weight;
             
             // Update weight history by shifting data points
-            if (_weightHistory.isNotEmpty) {
-              final newData = <double>[];
-              for (int i = 1; i < _weightHistory.length; i++) {
-                newData.add(_weightHistory[i]);
+            if (_weightData.isNotEmpty) {
+              final newData = <FlSpot>[];
+              final newHistory = <double>[];
+              
+              for (int i = 1; i < _weightData.length; i++) {
+                newData.add(FlSpot(i - 1.0, _weightData[i].y));
+                newHistory.add(_weightHistory[i]);
               }
-              newData.add(weight);
-              _weightHistory = newData;
+              newData.add(FlSpot(_weightData.length - 1.0, weight));
+              newHistory.add(weight);
+              
+              _weightData = newData;
+              _weightHistory = newHistory;
             }
             
             _checkWeightStatus();
-            
-            // Update connection status on successful data fetch
-            if (_connectionStatus != ConnectionStatus.connected) {
-              _connectionStatus = ConnectionStatus.connected;
-              _connectionBlinkTimer?.cancel();
-              _blinkState = false;
-            }
+            _connectionStatus = ConnectionStatus.connected;
+            _errorMessage = '';
+            _consecutiveFailures = 0; // Reset failure counter on success
           });
         }
       } catch (e) {
         print('Error updating weight: $e');
         if (mounted) {
           setState(() {
-            // Update connection status on failed data fetch
-            _connectionStatus = ConnectionStatus.disconnected;
-            if (_connectionBlinkTimer == null || !_connectionBlinkTimer!.isActive) {
-              _startConnectionBlinking();
+            _consecutiveFailures++;
+            
+            if (_consecutiveFailures >= 3) {
+              _connectionStatus = ConnectionStatus.disconnected;
+              _errorMessage = 'IoT device is offline';
+              
+              // Reset weight to zero when IoT is offline
+              _currentWeight = 0.0;
+              _checkWeightStatus();
             }
           });
         }
+      }
+    });
+  }
+  
+  // Start connection status blinking
+  void _startConnectionBlinking() {
+    _connectionBlinkTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
+      if (mounted) {
+        setState(() {
+          // Only blink if not connected
+          if (_connectionStatus != ConnectionStatus.connected) {
+            _isBlinking = !_isBlinking;
+          } else {
+            _isBlinking = false;
+          }
+        });
       }
     });
   }
@@ -325,8 +455,11 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       
       // Generate random alert for demo if weight changes significantly
       // Skip alert generation during initial load
-      if (!_hasAlert && !_isInitialLoad && _weightHistory.length > 1) {
-        final weightChange = _weightHistory.last - _weightHistory[_weightHistory.length - 2];
+      if (!_hasAlert && !_isInitialLoad && math.Random().nextDouble() < 0.2) {
+        final weightChange = (_weightData.isNotEmpty && _weightData.length > 1) 
+            ? _weightData.last.y - _weightData[_weightData.length - 2].y 
+            : 0.0;
+            
         if (weightChange.abs() > 2.0) {
           _hasAlert = true;
           _alertMessage = 'Weight change detected: ${weightChange.toStringAsFixed(1)} tons. Possible cargo shift alert!';
@@ -344,7 +477,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             children: [
               const Icon(Icons.error_outline, color: Colors.white),
               const SizedBox(width: 12),
-              const Text('Cannot give clearance when weight is out of range'),
+              const Expanded(
+                child: Text('Cannot give clearance when weight is out of range'),
+              ),
             ],
           ),
           backgroundColor: Colors.red.shade600,
@@ -397,9 +532,11 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                   color: Colors.white
                 ),
                 const SizedBox(width: 12),
-                Text(_isClearanceGiven 
-                  ? 'Clearance given to train' 
-                  : 'Clearance revoked from train'
+                Expanded(
+                  child: Text(_isClearanceGiven 
+                    ? 'Clearance given to train' 
+                    : 'Clearance revoked from train'
+                  ),
                 ),
               ],
             ),
@@ -420,6 +557,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         setState(() {
           // Revert state if there was an error
           _isClearanceGiven = !_isClearanceGiven;
+          _connectionStatus = ConnectionStatus.disconnected;
+          _errorMessage = 'Failed to update clearance status';
+          _consecutiveFailures++;
         });
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -428,7 +568,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               children: [
                 const Icon(Icons.error_outline, color: Colors.white),
                 const SizedBox(width: 12),
-                Text('Failed to update clearance status: ${error.toString()}'),
+                Expanded(
+                  child: Text('Failed to update clearance status: ${error.toString()}'),
+                ),
               ],
             ),
             backgroundColor: Colors.red.shade600,
@@ -480,9 +622,11 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               children: [
                 const Icon(Icons.info, color: Colors.white),
                 const SizedBox(width: 12),
-                Text(_sendAlertEnabled 
-                  ? 'Alerts enabled and sent to monitoring system' 
-                  : 'Alerts disabled'
+                Expanded(
+                  child: Text(_sendAlertEnabled 
+                    ? 'Alerts enabled and sent to monitoring system' 
+                    : 'Alerts disabled'
+                  ),
                 ),
               ],
             ),
@@ -501,6 +645,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         setState(() {
           // Revert state if there was an error
           _sendAlertEnabled = !_sendAlertEnabled;
+          _connectionStatus = ConnectionStatus.disconnected;
+          _errorMessage = 'Failed to update alert status';
+          _consecutiveFailures++;
         });
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -509,7 +656,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               children: [
                 const Icon(Icons.error_outline, color: Colors.white),
                 const SizedBox(width: 12),
-                Text('Failed to update alert status: ${error.toString()}'),
+                Expanded(
+                  child: Text('Failed to update alert status: ${error.toString()}'),
+                ),
               ],
             ),
             backgroundColor: Colors.red.shade600,
@@ -537,7 +686,16 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       _isRequestingPermission = true;
     });
     
-    bool hasPermission = await AppConfig.requestLocationPermission();
+    bool hasPermission;
+    
+    if (kIsWeb) {
+      hasPermission = await AppConfig.requestLocationPermission();
+    } else {
+      // For Android, we'll use the permission status from the location package
+      // This is handled by the GoogleMap widget automatically
+      // But we need to request it explicitly first
+      hasPermission = await _blynkService.requestLocationPermission();
+    }
     
     setState(() {
       _hasLocationPermission = hasPermission;
@@ -553,6 +711,11 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           duration: const Duration(seconds: 2),
         ),
       );
+      
+      // Initialize the map if we're on web
+      if (kIsWeb && _webMapElementId != null) {
+        _initializeWebMap();
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -564,12 +727,69 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       );
     }
   }
+  
+  // Initialize the web map using JavaScript
+  void _initializeWebMap() {
+    if (kIsWeb && _webMapElementId != null && _hasLocationPermission) {
+      // Use a small delay to ensure the DOM element is ready
+      Future.delayed(const Duration(milliseconds: 500), () {
+        try {
+          // For web, we'll use a different approach without js_util
+          // This will be handled by the JavaScript in index.html
+          print('Web map initialization requested for element: $_webMapElementId');
+        } catch (e) {
+          print('Error initializing web map: $e');
+        }
+      });
+    }
+  }
+  
+  // Platform-safe method to open URLs
+  Future<void> _openUrl(String url) async {
+    if (kIsWeb) {
+      // For web, use the JavaScript bridge
+      PlatformSpecific.openUrlInBrowser(url);
+    } else {
+      // For Android, use url_launcher
+      final Uri uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        print('Could not launch $url');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Could not open map: $url'),
+              backgroundColor: Colors.red.shade600,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    }
+  }
+  
+  void _updateMinWeightLimit(double value) {
+    setState(() {
+      _minWeightLimit = value;
+      _checkWeightStatus();
+    });
+  }
+  
+  void _updateMaxWeightLimit(double value) {
+    setState(() {
+      _maxWeightLimit = value;
+      _checkWeightStatus();
+    });
+  }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _mapController?.dispose();
     _updateTimer?.cancel(); // Cancel the timer when disposing
     _connectionBlinkTimer?.cancel(); // Cancel the connection blink timer
+    _connectionCheckTimer?.cancel(); // Cancel the connection check timer
     super.dispose();
   }
 
@@ -634,6 +854,43 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     final user = FirebaseAuth.instance.currentUser;
     final screenSize = MediaQuery.of(context).size;
     
+    // Create data object to pass to tab components
+    final data = DashboardData(
+      selectedTrain: _selectedTrain,
+      trainOptions: _trainOptions,
+      currentWeight: _currentWeight,
+      minWeightLimit: _minWeightLimit,
+      maxWeightLimit: _maxWeightLimit,
+      isOverweight: _isOverweight,
+      isUnderweight: _isUnderweight,
+      isClearanceGiven: _isClearanceGiven,
+      sendAlertEnabled: _sendAlertEnabled,
+      isLoadingWeight: _isLoadingWeight,
+      isLoadingHistory: _isLoadingHistory,
+      hasLocationPermission: _hasLocationPermission,
+      isRequestingPermission: _isRequestingPermission,
+      webMapElementId: _webMapElementId,
+      weightData: _weightData,
+      weightHistory: _weightHistory.isEmpty ? List.filled(6, 0.0) : _weightHistory,
+      hasAlert: _hasAlert,
+      alertMessage: _alertMessage,
+      connectionStatus: _connectionStatus,
+      isBlinking: _isBlinking,
+      errorMessage: _errorMessage,
+    );
+    
+    // Create callbacks object to pass to tab components
+    final callbacks = DashboardCallbacks(
+      toggleClearance: _toggleClearance,
+      toggleSendAlert: _toggleSendAlert,
+      dismissAlert: _dismissAlert,
+      requestLocationPermission: _requestLocationPermission,
+      fetchInitialData: _fetchInitialData,
+      openUrl: _openUrl,
+      updateMinWeightLimit: _updateMinWeightLimit,
+      updateMaxWeightLimit: _updateMaxWeightLimit,
+    );
+    
     return Scaffold(
       body: Column(
         children: [
@@ -694,7 +951,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                         // Tab Content
                         Padding(
                           padding: const EdgeInsets.all(16),
-                          child: _buildTabContent(screenSize),
+                          child: _buildTabContent(screenSize, data, callbacks),
                         ),
                       ],
                     ),
@@ -729,51 +986,60 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.shield,
-                        color: Colors.blue.shade700,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Vector Shield',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue.shade800,
-                          ),
+                Flexible(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          shape: BoxShape.circle,
                         ),
-                        Text(
-                          'Train Monitoring Dashboard',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
-                          ),
+                        child: Icon(
+                          Icons.shield,
+                          color: Colors.blue.shade700,
+                          size: 24,
                         ),
-                      ],
-                    ),
-                    // Add connection indicator
-                    const SizedBox(width: 16),
-                    ConnectionIndicator(
-                      status: _connectionStatus,
-                      blinking: _blinkState,
-                    ),
-                  ],
+                      ),
+                      const SizedBox(width: 12),
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Vector Shield',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue.shade800,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              'Train Monitoring Dashboard',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Connection status indicator
+                    ConnectionIndicator(
+                      status: _connectionStatus,
+                      blinking: _isBlinking,
+                    ),
+                    const SizedBox(width: 12),
                     CircleAvatar(
                       radius: 18,
                       backgroundColor: Colors.blue.shade100,
@@ -1047,120 +1313,32 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     );
   }
   
-  Widget _buildTabContent(Size screenSize) {
-    // Create a DashboardData object to pass to tab widgets
-    final dashboardData = DashboardData(
-      currentWeight: _currentWeight,
-      minWeightLimit: _minWeightLimit,
-      maxWeightLimit: _maxWeightLimit,
-      isOverweight: _isOverweight,
-      isUnderweight: _isUnderweight,
-      isClearanceGiven: _isClearanceGiven,
-      sendAlertEnabled: _sendAlertEnabled,
-      isLoadingWeight: _isLoadingWeight,
-      isLoadingHistory: _isLoadingHistory,
-      hasAlert: _hasAlert,
-      alertMessage: _alertMessage,
-      weightHistory: _weightHistory,
-      selectedTrain: _selectedTrain,
-      hasLocationPermission: _hasLocationPermission,
-      isRequestingPermission: _isRequestingPermission,
-      connectionStatus: _connectionStatus,
-      blinkState: _blinkState,
-    );
-    
-    // Create callback functions to pass to tab widgets
-    final callbacks = DashboardCallbacks(
-      toggleClearance: _toggleClearance,
-      toggleSendAlert: _toggleSendAlert,
-      requestLocationPermission: _requestLocationPermission,
-      dismissAlert: _dismissAlert,
-      fetchInitialData: _fetchInitialData,
-    );
-    
+  Widget _buildTabContent(Size screenSize, DashboardData data, DashboardCallbacks callbacks) {
     switch (_selectedTabIndex) {
       case 0:
         return OverviewTab(
           screenSize: screenSize,
-          data: dashboardData,
+          data: data,
           callbacks: callbacks,
         );
       case 1:
         return AnalyticsTab(
           screenSize: screenSize,
-          data: dashboardData,
+          data: data,
           callbacks: callbacks,
         );
       case 2:
         return LocationTab(
           screenSize: screenSize,
-          data: dashboardData,
+          data: data,
           callbacks: callbacks,
         );
       default:
         return OverviewTab(
           screenSize: screenSize,
-          data: dashboardData,
+          data: data,
           callbacks: callbacks,
         );
     }
   }
-}
-
-// Data class to pass to tab widgets
-class DashboardData {
-  final double currentWeight;
-  final double minWeightLimit;
-  final double maxWeightLimit;
-  final bool isOverweight;
-  final bool isUnderweight;
-  final bool isClearanceGiven;
-  final bool sendAlertEnabled;
-  final bool isLoadingWeight;
-  final bool isLoadingHistory;
-  final bool hasAlert;
-  final String alertMessage;
-  final List<double> weightHistory;
-  final String selectedTrain;
-  final bool hasLocationPermission;
-  final bool isRequestingPermission;
-  final ConnectionStatus connectionStatus;
-  final bool blinkState;
-  
-  DashboardData({
-    required this.currentWeight,
-    required this.minWeightLimit,
-    required this.maxWeightLimit,
-    required this.isOverweight,
-    required this.isUnderweight,
-    required this.isClearanceGiven,
-    required this.sendAlertEnabled,
-    required this.isLoadingWeight,
-    required this.isLoadingHistory,
-    required this.hasAlert,
-    required this.alertMessage,
-    required this.weightHistory,
-    required this.selectedTrain,
-    required this.hasLocationPermission,
-    required this.isRequestingPermission,
-    required this.connectionStatus,
-    required this.blinkState,
-  });
-}
-
-// Callback functions to pass to tab widgets
-class DashboardCallbacks {
-  final VoidCallback toggleClearance;
-  final VoidCallback toggleSendAlert;
-  final VoidCallback requestLocationPermission;
-  final VoidCallback dismissAlert;
-  final Future<void> Function() fetchInitialData;
-  
-  DashboardCallbacks({
-    required this.toggleClearance,
-    required this.toggleSendAlert,
-    required this.requestLocationPermission,
-    required this.dismissAlert,
-    required this.fetchInitialData,
-  });
 }

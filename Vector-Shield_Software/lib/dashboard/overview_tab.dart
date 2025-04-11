@@ -25,6 +25,37 @@ class OverviewTab extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 1200),
           child: Column(
             children: [
+              // Error message if any
+              if (data.errorMessage.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.red.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        color: Colors.red.shade700,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          data.errorMessage,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.red.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              
               // Status Cards - Now with real-time weight and alert switch
               GridView(
                 shrinkWrap: true,
@@ -108,18 +139,22 @@ class OverviewTab extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: data.isOverweight 
-                            ? Colors.red.shade700 
-                            : data.isUnderweight 
-                              ? Colors.amber.shade700 
-                              : Colors.blue.shade700,
+                          color: data.connectionStatus == ConnectionStatus.disconnected
+                            ? Colors.grey.shade500
+                            : data.isOverweight 
+                              ? Colors.red.shade700 
+                              : data.isUnderweight 
+                                ? Colors.amber.shade700 
+                                : Colors.blue.shade700,
                         ),
                       ),
                       Text(
                         'tons',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.grey.shade600,
+                          color: data.connectionStatus == ConnectionStatus.disconnected
+                            ? Colors.grey.shade500
+                            : Colors.grey.shade600,
                         ),
                       ),
                     ],
@@ -127,14 +162,18 @@ class OverviewTab extends StatelessWidget {
           ),
           const Spacer(),
           LinearProgressIndicator(
-            value: data.currentWeight / (data.maxWeightLimit * 1.2), // Scale for visual effect
+            value: data.connectionStatus == ConnectionStatus.disconnected
+              ? 0.0
+              : data.currentWeight / (data.maxWeightLimit * 1.2), // Scale for visual effect
             backgroundColor: Colors.grey.shade200,
             valueColor: AlwaysStoppedAnimation<Color>(
-              data.isOverweight 
-                ? Colors.red.shade500 
-                : data.isUnderweight 
-                  ? Colors.amber.shade500 
-                  : Colors.green.shade500,
+              data.connectionStatus == ConnectionStatus.disconnected
+                ? Colors.grey.shade400
+                : data.isOverweight 
+                  ? Colors.red.shade500 
+                  : data.isUnderweight 
+                    ? Colors.amber.shade500 
+                    : Colors.green.shade500,
             ),
             borderRadius: BorderRadius.circular(10),
             minHeight: 6,
@@ -185,14 +224,20 @@ class OverviewTab extends StatelessWidget {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: data.isClearanceGiven ? Colors.green.shade100 : Colors.red.shade100,
+                color: data.connectionStatus == ConnectionStatus.disconnected
+                  ? Colors.grey.shade200
+                  : data.isClearanceGiven ? Colors.green.shade100 : Colors.red.shade100,
                 shape: BoxShape.circle,
               ),
               child: Center(
                 child: Icon(
-                  data.isClearanceGiven ? Icons.check_circle : Icons.cancel,
+                  data.connectionStatus == ConnectionStatus.disconnected
+                    ? Icons.sensors_off
+                    : data.isClearanceGiven ? Icons.check_circle : Icons.cancel,
                   size: 36,
-                  color: data.isClearanceGiven ? Colors.green.shade700 : Colors.red.shade700,
+                  color: data.connectionStatus == ConnectionStatus.disconnected
+                    ? Colors.grey.shade500
+                    : data.isClearanceGiven ? Colors.green.shade700 : Colors.red.shade700,
                 ),
               ),
             ),
@@ -201,18 +246,24 @@ class OverviewTab extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: (data.isOverweight || data.isUnderweight) ? null : callbacks.toggleClearance,
+              onPressed: (data.isOverweight || data.isUnderweight || data.connectionStatus == ConnectionStatus.disconnected) 
+                ? null 
+                : callbacks.toggleClearance,
               style: ElevatedButton.styleFrom(
-                backgroundColor: data.isClearanceGiven 
-                  ? Colors.red.shade100 
-                  : (data.isOverweight || data.isUnderweight) 
-                    ? Colors.grey.shade200 
-                    : Colors.green.shade100,
-                foregroundColor: data.isClearanceGiven 
-                  ? Colors.red.shade700 
-                  : (data.isOverweight || data.isUnderweight) 
-                    ? Colors.grey.shade500 
-                    : Colors.green.shade700,
+                backgroundColor: data.connectionStatus == ConnectionStatus.disconnected
+                  ? Colors.grey.shade200
+                  : data.isClearanceGiven 
+                    ? Colors.red.shade100 
+                    : (data.isOverweight || data.isUnderweight) 
+                      ? Colors.grey.shade200 
+                      : Colors.green.shade100,
+                foregroundColor: data.connectionStatus == ConnectionStatus.disconnected
+                  ? Colors.grey.shade500
+                  : data.isClearanceGiven 
+                    ? Colors.red.shade700 
+                    : (data.isOverweight || data.isUnderweight) 
+                      ? Colors.grey.shade500 
+                      : Colors.green.shade700,
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -220,9 +271,11 @@ class OverviewTab extends StatelessWidget {
                 elevation: 0,
               ),
               child: Text(
-                (data.isOverweight || data.isUnderweight)
-                  ? 'Not Available'
-                  : (data.isClearanceGiven ? 'Revoke' : 'Give'),
+                data.connectionStatus == ConnectionStatus.disconnected
+                  ? 'Unavailable'
+                  : (data.isOverweight || data.isUnderweight)
+                    ? 'Not Available'
+                    : (data.isClearanceGiven ? 'Revoke' : 'Give'),
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -277,14 +330,20 @@ class OverviewTab extends StatelessWidget {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: data.sendAlertEnabled ? Colors.amber.shade100 : Colors.grey.shade100,
+                color: data.connectionStatus == ConnectionStatus.disconnected
+                  ? Colors.grey.shade200
+                  : data.sendAlertEnabled ? Colors.amber.shade100 : Colors.grey.shade100,
                 shape: BoxShape.circle,
               ),
               child: Center(
                 child: Icon(
-                  data.sendAlertEnabled ? Icons.notifications_active : Icons.notifications_off,
+                  data.connectionStatus == ConnectionStatus.disconnected
+                    ? Icons.sensors_off
+                    : data.sendAlertEnabled ? Icons.notifications_active : Icons.notifications_off,
                   size: 36,
-                  color: data.sendAlertEnabled ? Colors.amber.shade700 : Colors.grey.shade700,
+                  color: data.connectionStatus == ConnectionStatus.disconnected
+                    ? Colors.grey.shade500
+                    : data.sendAlertEnabled ? Colors.amber.shade700 : Colors.grey.shade700,
                 ),
               ),
             ),
@@ -293,14 +352,20 @@ class OverviewTab extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: callbacks.toggleSendAlert,
+              onPressed: data.connectionStatus == ConnectionStatus.disconnected
+                ? null
+                : callbacks.toggleSendAlert,
               style: ElevatedButton.styleFrom(
-                backgroundColor: data.sendAlertEnabled 
-                  ? Colors.grey.shade100 
-                  : Colors.amber.shade100,
-                foregroundColor: data.sendAlertEnabled 
-                  ? Colors.grey.shade700 
-                  : Colors.amber.shade700,
+                backgroundColor: data.connectionStatus == ConnectionStatus.disconnected
+                  ? Colors.grey.shade200
+                  : data.sendAlertEnabled 
+                    ? Colors.grey.shade100 
+                    : Colors.amber.shade100,
+                foregroundColor: data.connectionStatus == ConnectionStatus.disconnected
+                  ? Colors.grey.shade500
+                  : data.sendAlertEnabled 
+                    ? Colors.grey.shade700 
+                    : Colors.amber.shade700,
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -308,7 +373,9 @@ class OverviewTab extends StatelessWidget {
                 elevation: 0,
               ),
               child: Text(
-                data.sendAlertEnabled ? 'Disable' : 'Enable',
+                data.connectionStatus == ConnectionStatus.disconnected
+                  ? 'Unavailable'
+                  : data.sendAlertEnabled ? 'Disable' : 'Enable',
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -517,7 +584,9 @@ class OverviewTab extends StatelessWidget {
               divisions: 50,
               activeColor: Colors.amber.shade400,
               inactiveColor: Colors.grey.shade200,
-              onChanged: null, // Read-only in this refactored version
+              onChanged: data.connectionStatus == ConnectionStatus.disconnected
+                ? null
+                : callbacks.updateMinWeightLimit,
             ),
           ),
           const SizedBox(height: 12),
@@ -568,7 +637,9 @@ class OverviewTab extends StatelessWidget {
               divisions: 50,
               activeColor: Colors.red.shade400,
               inactiveColor: Colors.grey.shade200,
-              onChanged: null, // Read-only in this refactored version
+              onChanged: data.connectionStatus == ConnectionStatus.disconnected
+                ? null
+                : callbacks.updateMaxWeightLimit,
             ),
           ),
         ],

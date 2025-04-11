@@ -7,30 +7,61 @@ class AnalyticsTab extends StatelessWidget {
   final Size screenSize;
   final DashboardData data;
   final DashboardCallbacks callbacks;
-
+  
   const AnalyticsTab({
     super.key,
     required this.screenSize,
     required this.data,
     required this.callbacks,
   });
-
+  
   @override
   Widget build(BuildContext context) {
     // Calculate responsive grid columns based on screen width
     int crossAxisCount = screenSize.width < 600 ? 2 : 4;
-
+    
     return SingleChildScrollView(
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1200),
           child: Column(
             children: [
+              // Error message if any
+              if (data.errorMessage.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.red.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        color: Colors.red.shade700,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          data.errorMessage,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.red.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              
               // Weight History Graph - Now with real-time data
               _buildWeightHistoryCard(context),
-
+              
               const SizedBox(height: 16),
-
+              
               // Analytics Cards - Now 4 cards in one row on wide screens, 2 on mobile
               GridView(
                 shrinkWrap: true,
@@ -44,10 +75,11 @@ class AnalyticsTab extends StatelessWidget {
                 children: [
                   _buildAnalyticsCard(
                     'Avg. Weight',
-                    '${(data.weightHistory.reduce((a, b) => a + b) / data.weightHistory.length).toStringAsFixed(1)} tons',
+                    '${(data.weightHistory.isEmpty ? 0 : data.weightHistory.reduce((a, b) => a + b) / data.weightHistory.length).toStringAsFixed(1)} tons',
                     Icons.scale,
                     Colors.purple,
                     '+${(data.currentWeight - (data.weightHistory.isNotEmpty ? data.weightHistory.first : data.currentWeight)).toStringAsFixed(1)} from start',
+                    data.connectionStatus == ConnectionStatus.disconnected,
                   ),
                   _buildAnalyticsCard(
                     'Alerts',
@@ -55,13 +87,17 @@ class AnalyticsTab extends StatelessWidget {
                     Icons.warning_amber,
                     Colors.orange,
                     data.hasAlert ? '1 active' : 'No active alerts',
+                    data.connectionStatus == ConnectionStatus.disconnected,
                   ),
                   _buildAnalyticsCard(
                     'Efficiency',
-                    '${((data.currentWeight / data.maxWeightLimit) * 100).toStringAsFixed(0)}%',
+                    data.connectionStatus == ConnectionStatus.disconnected
+                      ? '0%'
+                      : '${((data.currentWeight / data.maxWeightLimit) * 100).toStringAsFixed(0)}%',
                     Icons.speed,
                     Colors.green,
                     'Load efficiency',
+                    data.connectionStatus == ConnectionStatus.disconnected,
                   ),
                   _buildAnalyticsCard(
                     'Distance',
@@ -69,6 +105,7 @@ class AnalyticsTab extends StatelessWidget {
                     Icons.route,
                     Colors.blue,
                     'This month',
+                    data.connectionStatus == ConnectionStatus.disconnected,
                   ),
                 ],
               ),
@@ -78,14 +115,8 @@ class AnalyticsTab extends StatelessWidget {
       ),
     );
   }
-
+  
   Widget _buildWeightHistoryCard(BuildContext context) {
-    // Convert weight history to FlSpot list for the chart
-    final spots = <FlSpot>[];
-    for (int i = 0; i < data.weightHistory.length; i++) {
-      spots.add(FlSpot(i.toDouble(), data.weightHistory[i]));
-    }
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -107,7 +138,11 @@ class AnalyticsTab extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.show_chart, color: Colors.blue.shade700, size: 20),
+                  Icon(
+                    Icons.show_chart,
+                    color: Colors.blue.shade700,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'Weight History',
@@ -127,13 +162,13 @@ class AnalyticsTab extends StatelessWidget {
                 ),
                 label: Text(
                   'Last 24 hours',
-                  style: TextStyle(color: Colors.blue.shade700, fontSize: 14),
+                  style: TextStyle(
+                    color: Colors.blue.shade700,
+                    fontSize: 14,
+                  ),
                 ),
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   minimumSize: Size.zero,
                 ),
                 onPressed: () {
@@ -145,15 +180,44 @@ class AnalyticsTab extends StatelessWidget {
           const SizedBox(height: 16),
           SizedBox(
             height: 200,
-            child:
-                data.isLoadingHistory
-                    ? Center(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.blue.shade700,
+            child: data.isLoadingHistory
+                ? Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.blue.shade700,
+                    ),
+                  )
+                : data.connectionStatus == ConnectionStatus.disconnected
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.sensors_off,
+                            size: 48,
+                            color: Colors.grey.shade400,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'IoT device is offline',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Weight history data unavailable',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade500,
+                            ),
+                          ),
+                        ],
                       ),
                     )
-                    : LineChart(
+                  : LineChart(
                       LineChartData(
                         gridData: FlGridData(
                           show: true,
@@ -208,7 +272,7 @@ class AnalyticsTab extends StatelessWidget {
                                     text = '1h ago';
                                     break;
                                 }
-
+                                
                                 return Text(
                                   text,
                                   style: TextStyle(
@@ -246,7 +310,7 @@ class AnalyticsTab extends StatelessWidget {
                         maxY: 60,
                         lineBarsData: [
                           LineChartBarData(
-                            spots: spots,
+                            spots: data.weightData,
                             isCurved: true,
                             gradient: LinearGradient(
                               colors: [
@@ -323,29 +387,42 @@ class AnalyticsTab extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 'Weight',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
               ),
               const SizedBox(width: 16),
               Container(
                 width: 10,
                 height: 2.5,
-                decoration: BoxDecoration(color: Colors.red.shade300),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade300,
+                ),
               ),
               const SizedBox(width: 6),
               Text(
                 'Max',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
               ),
               const SizedBox(width: 16),
               Container(
                 width: 10,
                 height: 2.5,
-                decoration: BoxDecoration(color: Colors.amber.shade300),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade300,
+                ),
               ),
               const SizedBox(width: 6),
               Text(
                 'Min',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
               ),
             ],
           ),
@@ -353,13 +430,14 @@ class AnalyticsTab extends StatelessWidget {
       ),
     );
   }
-
+  
   Widget _buildAnalyticsCard(
     String title,
     String value,
     IconData icon,
     MaterialColor color,
     String subtitle,
+    bool isOffline,
   ) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -379,7 +457,11 @@ class AnalyticsTab extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, color: color.shade700, size: 20),
+              Icon(
+                icon,
+                color: isOffline ? Colors.grey.shade500 : color.shade700,
+                size: 20,
+              ),
               const SizedBox(width: 6),
               Text(
                 title,
@@ -398,7 +480,7 @@ class AnalyticsTab extends StatelessWidget {
               style: TextStyle(
                 fontSize: 30,
                 fontWeight: FontWeight.bold,
-                color: color.shade700,
+                color: isOffline ? Colors.grey.shade500 : color.shade700,
               ),
             ),
           ),
@@ -407,12 +489,15 @@ class AnalyticsTab extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: color.shade50,
+                color: isOffline ? Colors.grey.shade100 : color.shade50,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                subtitle,
-                style: TextStyle(fontSize: 14, color: color.shade700),
+                isOffline ? 'Unavailable' : subtitle,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isOffline ? Colors.grey.shade500 : color.shade700,
+                ),
               ),
             ),
           ),
