@@ -124,7 +124,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   // Timer for periodic updates
   Timer? _updateTimer;
   Timer? _connectionBlinkTimer;
-  Timer? _connectionCheckTimer;
   
   // Map controller
   GoogleMapController? _mapController;
@@ -155,8 +154,8 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   bool _isBlinking = false;
   String _errorMessage = '';
   
-  // Consecutive failure counter
-  int _consecutiveFailures = 0;
+  // Refresh connection check in progress
+  bool _isRefreshingConnection = false;
   
   @override
   void initState() {
@@ -195,12 +194,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     
     // Start connection status blinking
     _startConnectionBlinking();
-    
-    // Start connection status check timer
-    _startConnectionCheckTimer();
-    
-    // Start periodic updates
-    _startPeriodicUpdates();
   }
   
   void _initializeWeightData() {
@@ -268,11 +261,39 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   
   // Fetch initial data from Blynk
   Future<void> _fetchInitialData() async {
+    if (_isRefreshingConnection) return;
+    
     setState(() {
       _isLoadingWeight = true;
       _isLoadingHistory = true;
       _connectionStatus = ConnectionStatus.connecting;
+      _isRefreshingConnection = true;
     });
+    
+    // First check if IoT device is online
+    bool isOnline = false;
+    try {
+      isOnline = await _blynkService.isIoTDeviceOnline();
+    } catch (e) {
+      print('Error checking IoT device status: $e');
+      isOnline = false;
+    }
+    
+    if (!isOnline) {
+      if (mounted) {
+        setState(() {
+          _isLoadingWeight = false;
+          _isLoadingHistory = false;
+          _isInitialLoad = false;
+          _connectionStatus = ConnectionStatus.disconnected;
+          _errorMessage = 'IoT device is offline';
+          _currentWeight = 0.0;
+          _checkWeightStatus();
+          _isRefreshingConnection = false;
+        });
+      }
+      return;
+    }
     
     try {
       // Get current weight
@@ -284,7 +305,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           _checkWeightStatus();
           _connectionStatus = ConnectionStatus.connected;
           _errorMessage = '';
-          _consecutiveFailures = 0; // Reset failure counter on success
         });
       }
       
@@ -303,11 +323,13 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             _weightHistory = history;
             _isLoadingHistory = false;
             _isInitialLoad = false;
+            _isRefreshingConnection = false;
           });
         } else if (mounted) {
           setState(() {
             _isLoadingHistory = false;
             _isInitialLoad = false;
+            _isRefreshingConnection = false;
           });
         }
       } catch (historyError) {
@@ -316,57 +338,101 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           setState(() {
             _isLoadingHistory = false;
             _isInitialLoad = false;
-          
-          // Check if it's a reports limit error
-          if (historyError.toString().contains('Reports limit reached')) {
-            _errorMessage = 'Reports limit reached. One device can send only 24 reports per day';
-            // Don't change connection status for reports limit error
-          } else if (historyError.toString().contains('No data')) {
-            _errorMessage = 'No weight history data available';
-            // Don't change connection status for no data error
-          } else {
-            _errorMessage = 'Failed to load weight history';
-            _connectionStatus = ConnectionStatus.disconnected;
-            _consecutiveFailures++;
-          }
-        });
+            _isRefreshingConnection = false;
+            
+            // Check if it's a reports limit error
+            if (historyError.toString().contains('Reports limit reached')) {
+              _errorMessage = 'Reports limit reached. One device can send only 24 reports per day';
+            } else if (historyError.toString().contains('No data')) {
+              _errorMessage = 'No weight history data available';
+              _connectionStatus = ConnectionStatus.disconnected;
+              _currentWeight = 0.0;
+              _checkWeightStatus();
+            } else {
+              _errorMessage = 'Failed to load weight history';
+              _connectionStatus = ConnectionStatus.disconnected;
+              _currentWeight = 0.0;
+              _checkWeightStatus();
+            }
+          });
+        }
       }
-    }
-  } catch (e) {
-    print('Error fetching initial data: $e');
-    if (mounted) {
-      setState(() {
-        _isLoadingWeight = false;
-        _isLoadingHistory = false;
-        _isInitialLoad = false;
-        _connectionStatus = ConnectionStatus.disconnected;
-        _errorMessage = 'Failed to connect to IoT device';
-        _consecutiveFailures++;
-        
-        // Reset weight to zero when IoT is offline
-        _currentWeight = 0.0;
-        _checkWeightStatus();
-      });
-    }
-  }
-}
-  
-  // Start connection check timer
-  void _startConnectionCheckTimer() {
-    _connectionCheckTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
-      // If we have consecutive failures, stop trying to update weight
-      if (_consecutiveFailures >= 3) {
-        _updateTimer?.cancel();
+    } catch (e) {
+      print('Error fetching initial data: $e');
+      if (mounted) {
         setState(() {
+          _isLoadingWeight = false;
+          _isLoadingHistory = false;
+          _isInitialLoad = false;
           _connectionStatus = ConnectionStatus.disconnected;
-          _errorMessage = 'IoT device is offline';
+          _errorMessage = 'Failed to connect to IoT device';
           
           // Reset weight to zero when IoT is offline
           _currentWeight = 0.0;
           _checkWeightStatus();
+          _isRefreshingConnection = false;
+        });
+      }
+    }
+  }
+  
+  // Start connection status blinking
+  void _startConnectionBlinking() {
+    _connectionBlinkTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
+      if (mounted) {
+        setState(() {
+          // Only blink if not connected
+          if (_connectionStatus != ConnectionStatus.connected) {
+            _isBlinking = !_isBlinking;
+          } else {
+            _isBlinking = false;
+          }
         });
       }
     });
+  }
+  
+  // Check connection status with rapid checks
+  Future<void> _checkConnectionStatus() async {
+    if (_isRefreshingConnection) return;
+    
+    setState(() {
+      _isRefreshingConnection = true;
+      _connectionStatus = ConnectionStatus.checking;
+    });
+    
+    // Perform 6 quick checks every 500ms
+    bool isOnline = false;
+    for (int i = 0; i < 6; i++) {
+      try {
+        isOnline = await _blynkService.isIoTDeviceOnline();
+        if (isOnline) break;
+      } catch (e) {
+        print('Error checking connection status (attempt ${i+1}): $e');
+      }
+      
+      // Wait 500ms between checks
+      if (i < 5) await Future.delayed(const Duration(milliseconds: 500));
+    }
+    
+    if (mounted) {
+      setState(() {
+        if (isOnline) {
+          _connectionStatus = ConnectionStatus.connected;
+          _errorMessage = '';
+          // Start periodic updates if we're connected
+          _startPeriodicUpdates();
+        } else {
+          _connectionStatus = ConnectionStatus.disconnected;
+          _errorMessage = 'IoT device is offline';
+          _currentWeight = 0.0;
+          _checkWeightStatus();
+          // Cancel periodic updates if we're disconnected
+          _updateTimer?.cancel();
+        }
+        _isRefreshingConnection = false;
+      });
+    }
   }
   
   // Start periodic updates
@@ -375,8 +441,8 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     _updateTimer?.cancel();
     
     _updateTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
-      // Don't update if we have consecutive failures
-      if (_consecutiveFailures >= 3) {
+      // Don't update if we're disconnected or refreshing
+      if (_connectionStatus == ConnectionStatus.disconnected || _isRefreshingConnection) {
         return;
       }
       
@@ -404,43 +470,14 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             }
             
             _checkWeightStatus();
-            _connectionStatus = ConnectionStatus.connected;
-            _errorMessage = '';
-            _consecutiveFailures = 0; // Reset failure counter on success
           });
         }
       } catch (e) {
         print('Error updating weight: $e');
         if (mounted) {
-          setState(() {
-            _consecutiveFailures++;
-            
-            if (_consecutiveFailures >= 3) {
-              _connectionStatus = ConnectionStatus.disconnected;
-              _errorMessage = 'IoT device is offline';
-              
-              // Reset weight to zero when IoT is offline
-              _currentWeight = 0.0;
-              _checkWeightStatus();
-            }
-          });
+          // If we get an error, check connection status
+          _checkConnectionStatus();
         }
-      }
-    });
-  }
-  
-  // Start connection status blinking
-  void _startConnectionBlinking() {
-    _connectionBlinkTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
-      if (mounted) {
-        setState(() {
-          // Only blink if not connected
-          if (_connectionStatus != ConnectionStatus.connected) {
-            _isBlinking = !_isBlinking;
-          } else {
-            _isBlinking = false;
-          }
-        });
       }
     });
   }
@@ -563,10 +600,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         setState(() {
           // Revert state if there was an error
           _isClearanceGiven = !_isClearanceGiven;
-          _connectionStatus = ConnectionStatus.disconnected;
-          _errorMessage = 'Failed to update clearance status';
-          _consecutiveFailures++;
         });
+        
+        // Check connection status
+        _checkConnectionStatus();
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -651,10 +688,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         setState(() {
           // Revert state if there was an error
           _sendAlertEnabled = !_sendAlertEnabled;
-          _connectionStatus = ConnectionStatus.disconnected;
-          _errorMessage = 'Failed to update alert status';
-          _consecutiveFailures++;
         });
+        
+        // Check connection status
+        _checkConnectionStatus();
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -795,7 +832,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     _mapController?.dispose();
     _updateTimer?.cancel(); // Cancel the timer when disposing
     _connectionBlinkTimer?.cancel(); // Cancel the connection blink timer
-    _connectionCheckTimer?.cancel(); // Cancel the connection check timer
     super.dispose();
   }
 
@@ -891,7 +927,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       toggleSendAlert: _toggleSendAlert,
       dismissAlert: _dismissAlert,
       requestLocationPermission: _requestLocationPermission,
-      fetchInitialData: _fetchInitialData,
+      fetchInitialData: () {
+        _checkConnectionStatus();
+        _fetchInitialData();
+      },
       openUrl: _openUrl,
       updateMinWeightLimit: _updateMinWeightLimit,
       updateMaxWeightLimit: _updateMaxWeightLimit,
