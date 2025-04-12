@@ -7,7 +7,7 @@
 
     <application
         android:label="Vector Shield"
-        android:name="${applicationName}"
+        android:name="Vector Shield"
         android:icon="@mipmap/ic_launcher">
 
         <!-- Add Google Maps API key -->
