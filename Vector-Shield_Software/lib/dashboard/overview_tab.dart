@@ -90,49 +90,51 @@ class OverviewTab extends StatelessWidget {
     );
   }
   
-  Widget _buildCompactWeightCard(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.scale,
-                color: Colors.blue.shade700,
-                size: 20,
+// Fix the overflow in the compact cards by using Expanded instead of Spacer
+Widget _buildCompactWeightCard(BuildContext context) {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.scale,
+              color: Colors.blue.shade700,
+              size: 20,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Current Weight',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade700,
               ),
-              const SizedBox(width: 6),
-              Text(
-                'Current Weight',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade700,
-                ),
-              ),
-            ],
-          ),
-          const Spacer(),
-          Center(
+            ),
+          ],
+        ),
+        Expanded(
+          child: Center(
             child: data.isLoadingWeight
                 ? CircularProgressIndicator(
                     strokeWidth: 2,
                     color: Colors.blue.shade700,
                   )
                 : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         data.currentWeight.toStringAsFixed(1),
@@ -160,66 +162,67 @@ class OverviewTab extends StatelessWidget {
                     ],
                   ),
           ),
-          const Spacer(),
-          LinearProgressIndicator(
-            value: data.connectionStatus == ConnectionStatus.disconnected
-              ? 0.0
-              : data.currentWeight / (data.maxWeightLimit * 1.2), // Scale for visual effect
-            backgroundColor: Colors.grey.shade200,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              data.connectionStatus == ConnectionStatus.disconnected
-                ? Colors.grey.shade400
-                : data.isOverweight 
-                  ? Colors.red.shade500 
-                  : data.isUnderweight 
-                    ? Colors.amber.shade500 
-                    : Colors.green.shade500,
+        ),
+        LinearProgressIndicator(
+          value: data.connectionStatus == ConnectionStatus.disconnected
+            ? 0.0
+            : data.currentWeight / (data.maxWeightLimit * 1.2), // Scale for visual effect
+          backgroundColor: Colors.grey.shade200,
+          valueColor: AlwaysStoppedAnimation<Color>(
+            data.connectionStatus == ConnectionStatus.disconnected
+              ? Colors.grey.shade400
+              : data.isOverweight 
+                ? Colors.red.shade500 
+                : data.isUnderweight 
+                  ? Colors.amber.shade500 
+                  : Colors.green.shade500,
+          ),
+          borderRadius: BorderRadius.circular(10),
+          minHeight: 6,
+        ),
+      ],
+    ),
+  );
+}
+
+// Fix the other compact cards similarly
+Widget _buildCompactClearanceCard(BuildContext context) {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.verified,
+              color: Colors.blue.shade700,
+              size: 20,
             ),
-            borderRadius: BorderRadius.circular(10),
-            minHeight: 6,
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildCompactClearanceCard(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.verified,
-                color: Colors.blue.shade700,
-                size: 20,
+            const SizedBox(width: 6),
+            Text(
+              'Clearance',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade700,
               ),
-              const SizedBox(width: 6),
-              Text(
-                'Clearance',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade700,
-                ),
-              ),
-            ],
-          ),
-          const Spacer(),
-          Center(
+            ),
+          ],
+        ),
+        Expanded(
+          child: Center(
             child: Container(
               width: 60,
               height: 60,
@@ -242,90 +245,89 @@ class OverviewTab extends StatelessWidget {
               ),
             ),
           ),
-          const Spacer(),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: (data.isOverweight || data.isUnderweight || data.connectionStatus == ConnectionStatus.disconnected) 
-                ? null 
-                : callbacks.toggleClearance,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: data.connectionStatus == ConnectionStatus.disconnected
-                  ? Colors.grey.shade200
-                  : data.isClearanceGiven 
-                    ? Colors.red.shade100 
-                    : (data.isOverweight || data.isUnderweight) 
-                      ? Colors.grey.shade200 
-                      : Colors.green.shade100,
-                foregroundColor: data.connectionStatus == ConnectionStatus.disconnected
-                  ? Colors.grey.shade500
-                  : data.isClearanceGiven 
-                    ? Colors.red.shade700 
-                    : (data.isOverweight || data.isUnderweight) 
-                      ? Colors.grey.shade500 
-                      : Colors.green.shade700,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                elevation: 0,
+        ),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: (data.isOverweight || data.isUnderweight || data.connectionStatus == ConnectionStatus.disconnected) 
+              ? null 
+              : callbacks.toggleClearance,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: data.connectionStatus == ConnectionStatus.disconnected
+                ? Colors.grey.shade200
+                : data.isClearanceGiven 
+                  ? Colors.red.shade100 
+                  : (data.isOverweight || data.isUnderweight) 
+                    ? Colors.grey.shade200 
+                    : Colors.green.shade100,
+              foregroundColor: data.connectionStatus == ConnectionStatus.disconnected
+                ? Colors.grey.shade500
+                : data.isClearanceGiven 
+                  ? Colors.red.shade700 
+                  : (data.isOverweight || data.isUnderweight) 
+                    ? Colors.grey.shade500 
+                    : Colors.green.shade700,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(
-                data.connectionStatus == ConnectionStatus.disconnected
-                  ? 'Unavailable'
-                  : (data.isOverweight || data.isUnderweight)
-                    ? 'Not Available'
-                    : (data.isClearanceGiven ? 'Revoke' : 'Give'),
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
+              elevation: 0,
+            ),
+            child: Text(
+              data.connectionStatus == ConnectionStatus.disconnected
+                ? 'Unavailable'
+                : (data.isOverweight || data.isUnderweight)
+                  ? 'Not Available'
+                  : (data.isClearanceGiven ? 'Revoke' : 'Give'),
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-  
-  // New card for alert switch
-  Widget _buildCompactAlertCard(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.notifications_active,
-                color: Colors.blue.shade700,
-                size: 20,
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildCompactAlertCard(BuildContext context) {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.notifications_active,
+              color: Colors.blue.shade700,
+              size: 20,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Alert Status',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade700,
               ),
-              const SizedBox(width: 6),
-              Text(
-                'Alert Status',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade700,
-                ),
-              ),
-            ],
-          ),
-          const Spacer(),
-          Center(
+            ),
+          ],
+        ),
+        Expanded(
+          child: Center(
             child: Container(
               width: 60,
               height: 60,
@@ -348,131 +350,137 @@ class OverviewTab extends StatelessWidget {
               ),
             ),
           ),
-          const Spacer(),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: data.connectionStatus == ConnectionStatus.disconnected
-                ? null
-                : callbacks.toggleSendAlert,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: data.connectionStatus == ConnectionStatus.disconnected
-                  ? Colors.grey.shade200
-                  : data.sendAlertEnabled 
-                    ? Colors.grey.shade100 
-                    : Colors.amber.shade100,
-                foregroundColor: data.connectionStatus == ConnectionStatus.disconnected
-                  ? Colors.grey.shade500
-                  : data.sendAlertEnabled 
-                    ? Colors.grey.shade700 
-                    : Colors.amber.shade700,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                elevation: 0,
+        ),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: data.connectionStatus == ConnectionStatus.disconnected
+              ? null
+              : callbacks.toggleSendAlert,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: data.connectionStatus == ConnectionStatus.disconnected
+                ? Colors.grey.shade200
+                : data.sendAlertEnabled 
+                  ? Colors.grey.shade100 
+                  : Colors.amber.shade100,
+              foregroundColor: data.connectionStatus == ConnectionStatus.disconnected
+                ? Colors.grey.shade500
+                : data.sendAlertEnabled 
+                  ? Colors.grey.shade700 
+                  : Colors.amber.shade700,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(
-                data.connectionStatus == ConnectionStatus.disconnected
-                  ? 'Unavailable'
-                  : data.sendAlertEnabled ? 'Disable' : 'Enable',
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
+              elevation: 0,
+            ),
+            child: Text(
+              data.connectionStatus == ConnectionStatus.disconnected
+                ? 'Unavailable'
+                : data.sendAlertEnabled ? 'Disable' : 'Enable',
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildCompactActionsCard(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.flash_on,
-                color: Colors.blue.shade700,
-                size: 20,
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildCompactActionsCard(BuildContext context) {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.flash_on,
+              color: Colors.blue.shade700,
+              size: 20,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Quick Actions',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade700,
               ),
-              const SizedBox(width: 6),
-              Text(
-                'Quick Actions',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade700,
-                ),
+            ),
+          ],
+        ),
+        Expanded(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildMiniActionButton(
+                context: context,
+                icon: Icons.refresh,
+                label: 'Refresh',
+                color: Colors.blue,
+                onPressed: () {
+                  callbacks.fetchInitialData();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Data refreshed'),
+                      backgroundColor: Colors.blue.shade600,
+                      behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 1),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+              _buildMiniActionButton(
+                context: context,
+                icon: Icons.report_problem,
+                label: 'Report',
+                color: Colors.orange,
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text(
+                        'Report an Issue',
+                        style: TextStyle(
+                          color: Colors.blue.shade800,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      content: const Text('This feature is not available in the demo version.'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Close'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ],
           ),
-          const Spacer(),
-          _buildMiniActionButton(
-            context: context,
-            icon: Icons.refresh,
-            label: 'Refresh',
-            color: Colors.blue,
-            onPressed: () {
-              callbacks.fetchInitialData();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Data refreshed'),
-                  backgroundColor: Colors.blue.shade600,
-                  behavior: SnackBarBehavior.floating,
-                  duration: const Duration(seconds: 1),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 10),
-          _buildMiniActionButton(
-            context: context,
-            icon: Icons.report_problem,
-            label: 'Report',
-            color: Colors.orange,
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: Text(
-                    'Report an Issue',
-                    style: TextStyle(
-                      color: Colors.blue.shade800,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  content: const Text('This feature is not available in the demo version.'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Close'),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
   
   Widget _buildMiniActionButton({
     required BuildContext context,

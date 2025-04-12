@@ -8,7 +8,6 @@ import 'config/config.dart';
 
 import 'auth/login_page.dart';
 import 'auth/signup_page.dart';
-import 'auth/auth_wrapper.dart';
 
 import 'dashboard/dashboard_page.dart';
 

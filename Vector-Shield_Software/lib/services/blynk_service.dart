@@ -35,9 +35,12 @@ class BlynkService {
         
         if (response.statusCode == 200) {
           // Parse the response
-          final List<dynamic> data = jsonDecode(response.body);
-          if (data.isNotEmpty && data[0] != null) {
+          final dynamic data = jsonDecode(response.body);
+          if (data is List && data.isNotEmpty && data[0] != null) {
             return double.parse(data[0].toString());
+          } else if (data is int) {
+            // Handle case where response is a single integer
+            return data.toDouble();
           } else {
             return 0.0;
           }
@@ -61,6 +64,11 @@ class BlynkService {
       if (kIsWeb) {
         // Simulate a network request
         await Future.delayed(const Duration(milliseconds: 800));
+        
+        // Check if we can connect to the IoT device first
+        if (!await isIoTDeviceOnline()) {
+          throw Exception('Failed to connect to IoT device');
+        }
         
         // Simulate a random weight history
         final random = math.Random();
@@ -86,21 +94,26 @@ class BlynkService {
         
         if (response.statusCode == 200) {
           // Parse the response
-          final List<dynamic> data = jsonDecode(response.body);
-          final history = data.map((item) {
-            if (item is Map && item.containsKey('value')) {
-              return double.parse(item['value'].toString());
+          final dynamic data = jsonDecode(response.body);
+          
+          if (data is List) {
+            final history = data.map((item) {
+              if (item is Map && item.containsKey('value')) {
+                return double.parse(item['value'].toString());
+              }
+              return 0.0;
+            }).toList();
+            
+            // Ensure we have at least 6 data points
+            while (history.length < 6) {
+              history.add(0.0);
             }
-            return 0.0;
-          }).toList();
-          
-          // Ensure we have at least 6 data points
-          while (history.length < 6) {
-            history.add(0.0);
+            
+            // Take only the last 6 data points
+            return history.sublist(math.max(0, history.length - 6));
+          } else {
+            throw Exception('No data');
           }
-          
-          // Take only the last 6 data points
-          return history.sublist(math.max(0, history.length - 6));
         } else {
           // If the server did not return a 200 OK response,
           // throw an exception.
@@ -176,6 +189,18 @@ class BlynkService {
       return true;
     } catch (e) {
       print('Error requesting location permission: $e');
+      return false;
+    }
+  }
+
+  // Add a method to check if the IoT device is online
+  Future<bool> isIoTDeviceOnline() async {
+    try {
+      // Try to get the current weight as a connectivity test
+      await getCurrentWeight();
+      return true;
+    } catch (e) {
+      print('IoT device is offline: $e');
       return false;
     }
   }

@@ -184,17 +184,23 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     // Check location permission
     _checkLocationPermission();
     
+    // Set initial connection status to checking
+    setState(() {
+      _connectionStatus = ConnectionStatus.checking;
+      _currentWeight = 0.0; // Start with zero weight until connected
+    });
+    
     // Fetch initial data
     _fetchInitialData();
-    
-    // Start periodic updates
-    _startPeriodicUpdates();
     
     // Start connection status blinking
     _startConnectionBlinking();
     
     // Start connection status check timer
     _startConnectionCheckTimer();
+    
+    // Start periodic updates
+    _startPeriodicUpdates();
   }
   
   void _initializeWeightData() {
@@ -310,40 +316,40 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           setState(() {
             _isLoadingHistory = false;
             _isInitialLoad = false;
-            
-            // Check if it's a reports limit error
-            if (historyError.toString().contains('Reports limit reached')) {
-              _errorMessage = 'Reports limit reached. One device can send only 24 reports per day';
-              // Don't change connection status for reports limit error
-            } else if (historyError.toString().contains('No data')) {
-              _errorMessage = 'No weight history data available';
-              // Don't change connection status for no data error
-            } else {
-              _errorMessage = 'Failed to load weight history';
-              _connectionStatus = ConnectionStatus.disconnected;
-              _consecutiveFailures++;
-            }
-          });
-        }
-      }
-    } catch (e) {
-      print('Error fetching initial data: $e');
-      if (mounted) {
-        setState(() {
-          _isLoadingWeight = false;
-          _isLoadingHistory = false;
-          _isInitialLoad = false;
-          _connectionStatus = ConnectionStatus.disconnected;
-          _errorMessage = 'Failed to connect to IoT device';
-          _consecutiveFailures++;
           
-          // Reset weight to zero when IoT is offline
-          _currentWeight = 0.0;
-          _checkWeightStatus();
+          // Check if it's a reports limit error
+          if (historyError.toString().contains('Reports limit reached')) {
+            _errorMessage = 'Reports limit reached. One device can send only 24 reports per day';
+            // Don't change connection status for reports limit error
+          } else if (historyError.toString().contains('No data')) {
+            _errorMessage = 'No weight history data available';
+            // Don't change connection status for no data error
+          } else {
+            _errorMessage = 'Failed to load weight history';
+            _connectionStatus = ConnectionStatus.disconnected;
+            _consecutiveFailures++;
+          }
         });
       }
     }
+  } catch (e) {
+    print('Error fetching initial data: $e');
+    if (mounted) {
+      setState(() {
+        _isLoadingWeight = false;
+        _isLoadingHistory = false;
+        _isInitialLoad = false;
+        _connectionStatus = ConnectionStatus.disconnected;
+        _errorMessage = 'Failed to connect to IoT device';
+        _consecutiveFailures++;
+        
+        // Reset weight to zero when IoT is offline
+        _currentWeight = 0.0;
+        _checkWeightStatus();
+      });
+    }
   }
+}
   
   // Start connection check timer
   void _startConnectionCheckTimer() {

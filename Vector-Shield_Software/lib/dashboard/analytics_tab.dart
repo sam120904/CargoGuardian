@@ -473,18 +473,18 @@ class AnalyticsTab extends StatelessWidget {
               ),
             ],
           ),
-          const Spacer(),
-          Center(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.bold,
-                color: isOffline ? Colors.grey.shade500 : color.shade700,
+          Expanded(
+            child: Center(
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                  color: isOffline ? Colors.grey.shade500 : color.shade700,
+                ),
               ),
             ),
           ),
-          const Spacer(),
           Center(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
