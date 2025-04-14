@@ -16,4 +16,9 @@ class PlatformSpecific {
       print('Using url_launcher for mobile');
     }
   }
+  
+  // Check network connectivity - implementation differs between web and mobile
+  static bool checkNetworkConnectivity() {
+    return PlatformImplementation.checkNetworkConnectivity();
+  }
 }
