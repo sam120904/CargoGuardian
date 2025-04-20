@@ -17,6 +17,9 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
+  <!-- Mobile viewport optimization -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
   <title>Vector Shield</title>
   <link rel="manifest" href="manifest.json">
 
@@ -29,6 +32,18 @@
     window.hasLocationPermission = false;
     window.googleMapsLoaded = false;
     window.mapInstances = {};
+    window.isMobileBrowser = false;
+    
+    // Detect mobile browser
+    (function() {
+      try {
+        var userAgent = navigator.userAgent.toLowerCase();
+        window.isMobileBrowser = /mobile|android|iphone|ipad/.test(userAgent);
+        console.log("Running on " + (window.isMobileBrowser ? "mobile" : "desktop") + " browser");
+      } catch (e) {
+        console.error("Error detecting browser type:", e);
+      }
+    })();
     
     // Google Maps callback - Define this BEFORE loading the Google Maps API
     window.initGoogleMapsCallback = function() {
@@ -112,8 +127,7 @@
       }
     };
 
-    // FIXED: Function to open a URL in a new tab
-    // We're using a different name to avoid conflicts with the native window.open
+    // Function to open a URL in a new tab
     window.openExternalUrl = function(url) {
       console.log("openExternalUrl called with URL:", url);
       if (url && typeof url === 'string') {
@@ -131,7 +145,24 @@
   <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDS3Qwxu0gTG5i0inF8V2-jdeFFhch9PSQ&callback=initGoogleMapsCallback&loading=async"></script>
   
   <!-- Improved script loading with error handling -->
-  <script src="flutter.js" defer></script>
+  <script>
+    // Preload flutter.js with error handling
+    window.addEventListener('load', function() {
+      var scriptTag = document.createElement('script');
+      scriptTag.src = 'flutter.js';
+      scriptTag.type = 'application/javascript';
+      document.body.appendChild(scriptTag);
+      
+      scriptTag.onload = function() {
+        console.log("flutter.js loaded successfully");
+      };
+      
+      scriptTag.onerror = function() {
+        console.error("Failed to load flutter.js");
+        showError("Failed to load application resources. Please check your internet connection and try again.");
+      };
+    });
+  </script>
 </head>
 <body>
   <div id="loading">
@@ -141,6 +172,7 @@
         padding: 0;
         background-color: #f0f7ff;
         font-family: Arial, sans-serif;
+        overflow: hidden; /* Prevent scrolling during loading */
       }
       #loading {
         display: flex;
@@ -149,6 +181,11 @@
         justify-content: center;
         height: 100vh;
         width: 100vw;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 9999;
+        background-color: #f0f7ff;
       }
       .spinner {
         width: 50px;
@@ -205,6 +242,20 @@
   </div>
 
   <script>
+    // Function to show error message
+    function showError(message) {
+      var loading = document.getElementById('loading');
+      var errorContainer = document.getElementById('error-container');
+      var errorMessage = document.getElementById('error-message');
+      var spinner = document.querySelector('.spinner');
+      var loadingText = document.querySelector('.loading-text');
+      
+      if (spinner) spinner.style.display = 'none';
+      if (loadingText) loadingText.style.display = 'none';
+      if (errorMessage) errorMessage.textContent = message || 'Failed to initialize the application.';
+      if (errorContainer) errorContainer.style.display = 'block';
+    }
+    
     // Request location permission after page loads
     window.addEventListener('load', function() {
       // Safe call to requestLocationPermission
@@ -213,67 +264,79 @@
       } else {
         console.error("requestLocationPermission function not defined");
       }
-    });
-    
-    // Improved Flutter initialization with error handling
-    window.addEventListener('load', function() {
-      var loading = document.querySelector('#loading');
-      var errorContainer = document.querySelector('#error-container');
-      var errorMessage = document.querySelector('#error-message');
-      var retryButton = document.querySelector('#retry-button');
       
-      function showError(message) {
-        if (loading) {
-          var spinner = loading.querySelector('.spinner');
-          var loadingText = loading.querySelector('.loading-text');
-          if (spinner) spinner.style.display = 'none';
-          if (loadingText) loadingText.style.display = 'none';
-        }
-        if (errorMessage) errorMessage.textContent = message || 'Failed to initialize the application.';
-        if (errorContainer) errorContainer.style.display = 'block';
-      }
-      
+      // Set up retry button
+      var retryButton = document.getElementById('retry-button');
       if (retryButton) {
         retryButton.addEventListener('click', function() {
           window.location.reload();
         });
       }
-
-      // Initialize Flutter with better error handling
-      _flutter.loader.loadEntrypoint({
-        serviceWorker: {
-          serviceWorkerVersion: serviceWorkerVersion,
-        },
-        onEntrypointLoaded: async function(engineInitializer) {
-          try {
-            const appRunner = await engineInitializer.initializeEngine({
-              // Use HTML renderer for better compatibility on Vercel
-              renderer: 'html'
-            });
-            await appRunner.runApp();
-            
-            // Hide loading screen after app is loaded
-            if (loading) {
-              // Fade out loading screen
-              loading.style.transition = 'opacity 0.5s ease';
-              loading.style.opacity = '0';
-              
-              // Remove loading screen after fade out
-              setTimeout(function() {
-                if (loading && loading.parentNode) {
-                  loading.parentNode.removeChild(loading);
-                }
-              }, 500);
-            }
-          } catch (e) {
-            console.error('Flutter initialization error:', e);
-            showError('Failed to initialize Flutter: ' + e.message);
-          }
+    });
+    
+    // Improved Flutter initialization with error handling and mobile detection
+    window.addEventListener('load', function() {
+      var loading = document.getElementById('loading');
+      
+      // Wait for flutter.js to be loaded
+      var initFlutterApp = function() {
+        if (typeof _flutter === 'undefined') {
+          console.log("Waiting for flutter.js to load...");
+          setTimeout(initFlutterApp, 100);
+          return;
         }
-      }).catch(function(err) {
-        console.error('Flutter loader error:', err);
-        showError('Failed to load application resources: ' + err.message);
-      });
+        
+        // Add extra delay for mobile browsers
+        var initDelay = window.isMobileBrowser ? 1000 : 0;
+        setTimeout(function() {
+          // Initialize Flutter with better error handling
+          _flutter.loader.loadEntrypoint({
+            serviceWorker: {
+              serviceWorkerVersion: serviceWorkerVersion,
+            },
+            onEntrypointLoaded: async function(engineInitializer) {
+              try {
+                console.log("Flutter entrypoint loaded, initializing engine...");
+                
+                // Use canvaskit renderer for desktop, html for mobile
+                const renderer = window.isMobileBrowser ? "html" : "canvaskit";
+                console.log("Using renderer:", renderer);
+                
+                const appRunner = await engineInitializer.initializeEngine({
+                  renderer: renderer,
+                  useColorEmoji: true
+                });
+                
+                console.log("Flutter engine initialized, running app...");
+                await appRunner.runApp();
+                
+                // Hide loading screen after app is loaded
+                if (loading) {
+                  // Fade out loading screen
+                  loading.style.transition = 'opacity 0.5s ease';
+                  loading.style.opacity = '0';
+                  
+                  // Remove loading screen after fade out
+                  setTimeout(function() {
+                    if (loading && loading.parentNode) {
+                      loading.parentNode.removeChild(loading);
+                    }
+                  }, 500);
+                }
+              } catch (e) {
+                console.error('Flutter initialization error:', e);
+                showError('Failed to initialize Flutter: ' + e.message);
+              }
+            }
+          }).catch(function(err) {
+            console.error('Flutter loader error:', err);
+            showError('Failed to load application resources: ' + err.message);
+          });
+        }, initDelay);
+      };
+      
+      // Start the initialization process
+      initFlutterApp();
     });
   </script>
 </body>

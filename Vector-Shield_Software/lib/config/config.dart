@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:async';
 
 // Platform-specific imports
+import '../platform/platform_imports.dart';
 
 class AppConfig {
   // Static initialization flag to track if we've tried loading .env
@@ -72,29 +73,28 @@ class AppConfig {
   static String get firebaseStorageBucket =>
       _getEnv('FIREBASE_STORAGE_BUCKET', 'vector-shield.appspot.com');
 
-  // Location permission status - platform-safe implementation
+  // Location permission status - improved platform-safe implementation
   static bool get hasLocationPermission {
     if (kIsWeb) {
-      // For web, we'll use a simpler approach without js_util
-      return false; // Default to false, will be checked at runtime
+      try {
+        return PlatformSpecific.getLocationPermission();
+      } catch (e) {
+        print("Error checking location permission: $e");
+        return false;
+      }
     }
     return false;
   }
 
-  // Method to request location permission - platform-safe implementation
+  // Method to request location permission - improved platform-safe implementation
   static Future<bool> requestLocationPermission() async {
     if (kIsWeb) {
-      // For web, we'll use a simpler approach
-      final completer = Completer<bool>();
-      
-      // Wait a bit for the permission dialog to be handled
-      await Future.delayed(const Duration(seconds: 2));
-      
-      // We'll assume permission was granted for now
-      // The actual check will happen in JavaScript
-      completer.complete(true);
-      
-      return completer.future;
+      try {
+        return await PlatformSpecific.requestLocationPermission();
+      } catch (e) {
+        print("Error requesting location permission: $e");
+        return false;
+      }
     }
     return false;
   }
@@ -116,12 +116,28 @@ class AppConfig {
     return blynkTemplateId.isNotEmpty && blynkAuthToken.isNotEmpty;
   }
 
+  // Method to check if running on mobile browser
+  static bool get isMobileBrowser {
+    if (kIsWeb) {
+      try {
+        return PlatformSpecific.isMobileBrowser();
+      } catch (e) {
+        print("Error checking if mobile browser: $e");
+        return false;
+      }
+    }
+    return false;
+  }
+
   // Debug method to print all config values (without sensitive data)
   static void debugPrintConfig() {
     if (kDebugMode) {
       print('=== AppConfig Values ===');
       print('Environment: ${isProduction ? 'Production' : 'Development'}');
       print('Running on: ${kIsWeb ? 'Web' : 'Native'}');
+      if (kIsWeb) {
+        print('Browser type: ${isMobileBrowser ? 'Mobile' : 'Desktop'}');
+      }
       print('FIREBASE_API_KEY: ${firebaseApiKey.isEmpty ? 'MISSING' : 'SET'}');
       print('FIREBASE_APP_ID: ${firebaseAppId.isEmpty ? 'MISSING' : 'SET'}');
       print('FIREBASE_PROJECT_ID: $firebaseProjectId');
@@ -131,4 +147,3 @@ class AppConfig {
     }
   }
 }
-

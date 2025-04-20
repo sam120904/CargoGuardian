@@ -1,3 +1,5 @@
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,23 +14,8 @@ import 'auth/signup_page.dart';
 
 import 'dashboard/dashboard_page.dart';
 
-// Add this function to handle platform-specific initialization
-Future<void> _initializeFlutterWebForMobile() async {
-  if (kIsWeb) {
-    // Add a longer delay for mobile browsers
-    final userAgent = Uri.encodeComponent(
-        kIsWeb ? html.window.navigator.userAgent.toLowerCase() : '');
-    final isMobile = userAgent.contains('mobile') || 
-                     userAgent.contains('android') || 
-                     userAgent.contains('iphone') || 
-                     userAgent.contains('ipad');
-    
-    if (isMobile) {
-      // Mobile browsers need more time to initialize
-      await Future.delayed(const Duration(milliseconds: 1000));
-    }
-  }
-}
+// Platform detection needs to be at the top level
+bool _isMobileBrowser = false;
 
 void main() async {
   // Wrap the app in a zone to catch all unhandled errors
@@ -39,23 +26,20 @@ void main() async {
     // Initialize AppConfig first
     await AppConfig.initialize();
     
-    // Add platform-specific initialization for web
+    // Platform detection for web
     if (kIsWeb) {
       try {
-        // This import is needed for web platform detection
-        // ignore: avoid_web_libraries_in_flutter
-        import 'dart:html' as html;
-        
-        // Check if running on mobile browser
         final userAgent = html.window.navigator.userAgent.toLowerCase();
-        final isMobile = userAgent.contains('mobile') || 
-                         userAgent.contains('android') || 
-                         userAgent.contains('iphone') || 
-                         userAgent.contains('ipad');
+        _isMobileBrowser = userAgent.contains('mobile') || 
+                          userAgent.contains('android') || 
+                          userAgent.contains('iphone') || 
+                          userAgent.contains('ipad');
         
-        if (isMobile) {
-          // Add a small delay for mobile browsers before Firebase init
-          await Future.delayed(const Duration(milliseconds: 500));
+        print("Running on ${_isMobileBrowser ? 'mobile' : 'desktop'} browser");
+        
+        // Add delay for mobile browsers before Firebase init
+        if (_isMobileBrowser) {
+          await Future.delayed(const Duration(milliseconds: 800));
         }
       } catch (e) {
         print("Error during web platform detection: $e");
@@ -115,24 +99,11 @@ class _MyAppState extends State<MyApp> {
       // Add a small delay to ensure everything is loaded
       // Increase delay for mobile browsers
       if (kIsWeb) {
-        try {
-          // ignore: avoid_web_libraries_in_flutter
-          import 'dart:html' as html;
-          final userAgent = html.window.navigator.userAgent.toLowerCase();
-          final isMobile = userAgent.contains('mobile') || 
-                           userAgent.contains('android') || 
-                           userAgent.contains('iphone') || 
-                           userAgent.contains('ipad');
-          
-          if (isMobile) {
-            // Mobile browsers need more time
-            await Future.delayed(const Duration(milliseconds: 1500));
-          } else {
-            await Future.delayed(const Duration(milliseconds: 500));
-          }
-        } catch (e) {
-          // Fallback delay if platform detection fails
-          await Future.delayed(const Duration(milliseconds: 1000));
+        if (_isMobileBrowser) {
+          // Mobile browsers need more time
+          await Future.delayed(const Duration(milliseconds: 1500));
+        } else {
+          await Future.delayed(const Duration(milliseconds: 500));
         }
       } else {
         await Future.delayed(const Duration(milliseconds: 500));
