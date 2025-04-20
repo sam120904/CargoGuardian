@@ -19,4 +19,13 @@ class PlatformImplementation {
   static void logToConsole(String message) {
     js.context.callMethod('console.log', [message]);
   }
+  
+  // Add a method to check if running on mobile browser
+  static bool isMobileBrowser() {
+    final userAgent = html.window.navigator.userAgent.toLowerCase();
+    return userAgent.contains('mobile') || 
+           userAgent.contains('android') || 
+           userAgent.contains('iphone') || 
+           userAgent.contains('ipad');
+  }
 }

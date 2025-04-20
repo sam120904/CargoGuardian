@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 
 import 'firebase_options.dart';
 import 'config/config.dart';
@@ -11,6 +12,23 @@ import 'auth/signup_page.dart';
 
 import 'dashboard/dashboard_page.dart';
 
+// Add this function to handle platform-specific initialization
+Future<void> _initializeFlutterWebForMobile() async {
+  if (kIsWeb) {
+    // Add a longer delay for mobile browsers
+    final userAgent = Uri.encodeComponent(
+        kIsWeb ? html.window.navigator.userAgent.toLowerCase() : '');
+    final isMobile = userAgent.contains('mobile') || 
+                     userAgent.contains('android') || 
+                     userAgent.contains('iphone') || 
+                     userAgent.contains('ipad');
+    
+    if (isMobile) {
+      // Mobile browsers need more time to initialize
+      await Future.delayed(const Duration(milliseconds: 1000));
+    }
+  }
+}
 
 void main() async {
   // Wrap the app in a zone to catch all unhandled errors
@@ -21,10 +39,33 @@ void main() async {
     // Initialize AppConfig first
     await AppConfig.initialize();
     
+    // Add platform-specific initialization for web
+    if (kIsWeb) {
+      try {
+        // This import is needed for web platform detection
+        // ignore: avoid_web_libraries_in_flutter
+        import 'dart:html' as html;
+        
+        // Check if running on mobile browser
+        final userAgent = html.window.navigator.userAgent.toLowerCase();
+        final isMobile = userAgent.contains('mobile') || 
+                         userAgent.contains('android') || 
+                         userAgent.contains('iphone') || 
+                         userAgent.contains('ipad');
+        
+        if (isMobile) {
+          // Add a small delay for mobile browsers before Firebase init
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+      } catch (e) {
+        print("Error during web platform detection: $e");
+      }
+    }
+    
     // Debug: Print config values
     AppConfig.debugPrintConfig();
     
-    // Initialize Firebase
+    // Initialize Firebase with error handling
     if (Firebase.apps.isEmpty) {
       try {
         await Firebase.initializeApp(
@@ -72,7 +113,30 @@ class _MyAppState extends State<MyApp> {
   Future<void> _initializeApp() async {
     try {
       // Add a small delay to ensure everything is loaded
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Increase delay for mobile browsers
+      if (kIsWeb) {
+        try {
+          // ignore: avoid_web_libraries_in_flutter
+          import 'dart:html' as html;
+          final userAgent = html.window.navigator.userAgent.toLowerCase();
+          final isMobile = userAgent.contains('mobile') || 
+                           userAgent.contains('android') || 
+                           userAgent.contains('iphone') || 
+                           userAgent.contains('ipad');
+          
+          if (isMobile) {
+            // Mobile browsers need more time
+            await Future.delayed(const Duration(milliseconds: 1500));
+          } else {
+            await Future.delayed(const Duration(milliseconds: 500));
+          }
+        } catch (e) {
+          // Fallback delay if platform detection fails
+          await Future.delayed(const Duration(milliseconds: 1000));
+        }
+      } else {
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
       
       // Mark initialization as complete
       if (mounted) {
@@ -145,7 +209,7 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-// Single loading screen for the app
+// Improved loading screen with better mobile compatibility
 class AppLoadingScreen extends StatelessWidget {
   const AppLoadingScreen({super.key});
 
@@ -286,7 +350,7 @@ class InitErrorScreen extends StatelessWidget {
   }
 }
 
-// Separate widget to handle authentication state with timeout
+// Improved AuthWrapper with better mobile compatibility
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
@@ -373,4 +437,3 @@ class _AuthWrapperState extends State<AuthWrapper> {
     );
   }
 }
-
