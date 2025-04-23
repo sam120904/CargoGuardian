@@ -8,7 +8,7 @@ import '../platform/platform_imports.dart';
 class AppConfig {
   // Static initialization flag to track if we've tried loading .env
   static bool _didTryLoadEnv = false;
-  
+
   // Cache for environment variables to prevent repeated lookups
   static final Map<String, String> _envCache = {};
 
@@ -38,7 +38,7 @@ class AppConfig {
         return cachedValue;
       }
     }
-    
+
     // Then check dotenv
     final envValue = dotenv.env[key];
     if (envValue != null && envValue.isNotEmpty) {
@@ -99,6 +99,19 @@ class AppConfig {
     return false;
   }
 
+  // Method to check if running on iOS Safari
+  static bool get isIOSSafari {
+    if (kIsWeb) {
+      try {
+        return PlatformSpecific.isIOSSafari();
+      } catch (e) {
+        print("Error checking if iOS Safari: $e");
+        return false;
+      }
+    }
+    return false;
+  }
+
   // Method to check if running in production
   static bool get isProduction {
     return kIsWeb && !kDebugMode;
@@ -137,6 +150,7 @@ class AppConfig {
       print('Running on: ${kIsWeb ? 'Web' : 'Native'}');
       if (kIsWeb) {
         print('Browser type: ${isMobileBrowser ? 'Mobile' : 'Desktop'}');
+        print('iOS Safari: ${isIOSSafari ? 'Yes' : 'No'}');
       }
       print('FIREBASE_API_KEY: ${firebaseApiKey.isEmpty ? 'MISSING' : 'SET'}');
       print('FIREBASE_APP_ID: ${firebaseAppId.isEmpty ? 'MISSING' : 'SET'}');
@@ -146,4 +160,5 @@ class AppConfig {
       print('=======================');
     }
   }
+
 }

@@ -10,39 +10,37 @@ class PlatformImplementation {
       print('Could not launch $url');
     }
   }
-  
-  // Add a method to check network connectivity on mobile
+
   static bool checkNetworkConnectivity() {
-    // On mobile, we'll just return true as a placeholder
-    // In a real app, you would use connectivity package
+    // Placeholder: use `connectivity_plus` for real check
     return true;
   }
-  
-  // Add a method to log to console
+
   static void logToConsole(String message) {
     print(message);
   }
-  
-  // Add a method to check if running on mobile browser
+
   static bool isMobileBrowser() {
-    // Always false for native mobile
+    // Native mobile apps are not mobile browsers
     return false;
   }
-  
-  // Add a method to get location permission status
+
   static bool getLocationPermission() {
-    // This would be implemented with a location package
+    // Not implemented - needs a location plugin
     return false;
   }
-  
-  // Add a method to request location permission
+
   static Future<bool> requestLocationPermission() async {
-    // This would be implemented with a location package
+    // Not implemented - needs a location plugin
     return false;
   }
-  
-  // Add a method to initialize a map
+
   static void initializeMap(String elementId, double lat, double lng, String title) {
-    // Not applicable for mobile
+    // Maps not supported in this way on mobile
+  }
+
+  static bool isIOSSafari() {
+    // Not applicable on mobile
+    return false;
   }
 }

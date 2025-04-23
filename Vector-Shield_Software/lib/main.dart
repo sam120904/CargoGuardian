@@ -19,60 +19,68 @@ bool _isMobileBrowser = false;
 
 void main() async {
   // Wrap the app in a zone to catch all unhandled errors
-  runZonedGuarded(() async {
-    // Ensure Flutter is initialized
-    WidgetsFlutterBinding.ensureInitialized();
-    
-    // Initialize AppConfig first
-    await AppConfig.initialize();
-    
-    // Platform detection for web
-    if (kIsWeb) {
-      try {
-        final userAgent = html.window.navigator.userAgent.toLowerCase();
-        _isMobileBrowser = userAgent.contains('mobile') || 
-                          userAgent.contains('android') || 
-                          userAgent.contains('iphone') || 
-                          userAgent.contains('ipad');
-        
-        print("Running on ${_isMobileBrowser ? 'mobile' : 'desktop'} browser");
-        
-        // Add delay for mobile browsers before Firebase init
-        if (_isMobileBrowser) {
-          await Future.delayed(const Duration(milliseconds: 800));
-        }
-      } catch (e) {
-        print("Error during web platform detection: $e");
-      }
-    }
-    
-    // Debug: Print config values
-    AppConfig.debugPrintConfig();
-    
-    // Initialize Firebase with error handling
-    if (Firebase.apps.isEmpty) {
-      try {
-        await Firebase.initializeApp(
-          options: DefaultFirebaseOptions.currentPlatform,
-        );
-        print("Firebase initialized successfully");
-      } catch (e) {
-        print("Error initializing Firebase: $e");
-        if (e.toString().contains('duplicate-app')) {
-          print("Ignoring duplicate app error, Firebase is already initialized");
+  runZonedGuarded(
+    () async {
+      // Ensure Flutter is initialized
+      WidgetsFlutterBinding.ensureInitialized();
+
+      // Initialize AppConfig first
+      await AppConfig.initialize();
+
+      // Platform detection for web
+      if (kIsWeb) {
+        try {
+          final userAgent = html.window.navigator.userAgent.toLowerCase();
+          _isMobileBrowser =
+              userAgent.contains('mobile') ||
+              userAgent.contains('android') ||
+              userAgent.contains('iphone') ||
+              userAgent.contains('ipad');
+
+          print(
+            "Running on ${_isMobileBrowser ? 'mobile' : 'desktop'} browser",
+          );
+
+          // Add delay for mobile browsers before Firebase init
+          if (_isMobileBrowser) {
+            await Future.delayed(const Duration(milliseconds: 800));
+          }
+        } catch (e) {
+          print("Error during web platform detection: $e");
         }
       }
-    } else {
-      print("Firebase was already initialized");
-    }
-    
-    // Run the app
-    runApp(const MyApp());
-  }, (error, stackTrace) {
-    // Log any unhandled errors
-    print('Unhandled error: $error');
-    print('Stack trace: $stackTrace');
-  });
+
+      // Debug: Print config values
+      AppConfig.debugPrintConfig();
+
+      // Initialize Firebase with error handling
+      if (Firebase.apps.isEmpty) {
+        try {
+          await Firebase.initializeApp(
+            options: DefaultFirebaseOptions.currentPlatform,
+          );
+          print("Firebase initialized successfully");
+        } catch (e) {
+          print("Error initializing Firebase: $e");
+          if (e.toString().contains('duplicate-app')) {
+            print(
+              "Ignoring duplicate app error, Firebase is already initialized",
+            );
+          }
+        }
+      } else {
+        print("Firebase was already initialized");
+      }
+
+      // Run the app
+      runApp(const MyApp());
+    },
+    (error, stackTrace) {
+      // Log any unhandled errors
+      print('Unhandled error: $error');
+      print('Stack trace: $stackTrace');
+    },
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -86,21 +94,32 @@ class _MyAppState extends State<MyApp> {
   // App initialization state
   bool _isInitialized = false;
   String? _initError;
-  
+
   @override
   void initState() {
     super.initState();
     _initializeApp();
   }
-  
+
   // Initialize the app
+
   Future<void> _initializeApp() async {
     try {
       // Add a small delay to ensure everything is loaded
-      // Increase delay for mobile browsers
+      // Increase delay for mobile browsers, especially iOS Safari
       if (kIsWeb) {
-        if (_isMobileBrowser) {
-          // Mobile browsers need more time
+        // Check if we're on iOS Safari
+        final userAgent = html.window.navigator.userAgent.toLowerCase();
+        final isIOSSafari =
+            userAgent.contains('iphone') ||
+            userAgent.contains('ipad') ||
+            userAgent.contains('ipod');
+
+        if (isIOSSafari) {
+          // iOS Safari needs more time
+          await Future.delayed(const Duration(milliseconds: 2500));
+        } else if (_isMobileBrowser) {
+          // Other mobile browsers
           await Future.delayed(const Duration(milliseconds: 1500));
         } else {
           await Future.delayed(const Duration(milliseconds: 500));
@@ -108,7 +127,7 @@ class _MyAppState extends State<MyApp> {
       } else {
         await Future.delayed(const Duration(milliseconds: 500));
       }
-      
+
       // Mark initialization as complete
       if (mounted) {
         setState(() {
@@ -120,7 +139,8 @@ class _MyAppState extends State<MyApp> {
       if (mounted) {
         setState(() {
           _initError = e.toString();
-          _isInitialized = true; // Still mark as initialized to show error screen
+          _isInitialized =
+              true;
         });
       }
     }
@@ -166,11 +186,12 @@ class _MyAppState extends State<MyApp> {
           ),
         ),
       ),
-      home: !_isInitialized 
-          ? const AppLoadingScreen() 
-          : (_initError != null 
-              ? InitErrorScreen(error: _initError) 
-              : const AuthWrapper()),
+      home:
+          !_isInitialized
+              ? const AppLoadingScreen()
+              : (_initError != null
+                  ? InitErrorScreen(error: _initError)
+                  : const AuthWrapper()),
       routes: {
         '/login': (context) => const LoginPage(),
         '/signup': (context) => const SignupPage(),
@@ -230,10 +251,7 @@ class AppLoadingScreen extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 "Train Cargo Monitoring System",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey.shade700,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
               ),
               const SizedBox(height: 32),
               SizedBox(
@@ -241,16 +259,15 @@ class AppLoadingScreen extends StatelessWidget {
                 height: 40,
                 child: CircularProgressIndicator(
                   strokeWidth: 3,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade600),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Colors.blue.shade600,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
               Text(
                 "Initializing...",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey.shade600,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
               ),
             ],
           ),
@@ -307,7 +324,9 @@ class InitErrorScreen extends StatelessWidget {
                     // Try to navigate to login page anyway
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => const LoginPage()),
+                      MaterialPageRoute(
+                        builder: (context) => const LoginPage(),
+                      ),
                     );
                   },
                   child: const Text("Try to continue anyway"),
@@ -331,7 +350,7 @@ class AuthWrapper extends StatefulWidget {
 
 class _AuthWrapperState extends State<AuthWrapper> {
   bool _timeoutReached = false;
-  
+
   @override
   void initState() {
     super.initState();
@@ -352,13 +371,15 @@ class _AuthWrapperState extends State<AuthWrapper> {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         // If timeout reached and still waiting, show login page
-        if ((snapshot.connectionState == ConnectionState.waiting) && _timeoutReached) {
+        if ((snapshot.connectionState == ConnectionState.waiting) &&
+            _timeoutReached) {
           print("Auth timeout reached, showing login page");
           return const LoginPage();
         }
-        
+
         // Show loading indicator while waiting for auth state
-        if (snapshot.connectionState == ConnectionState.waiting && !_timeoutReached) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !_timeoutReached) {
           return Scaffold(
             body: Container(
               decoration: BoxDecoration(
@@ -377,7 +398,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
                       height: 40,
                       child: CircularProgressIndicator(
                         strokeWidth: 3,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade600),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Colors.blue.shade600,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -394,13 +417,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
             ),
           );
         }
-        
+
         // Check if user is logged in
         if (snapshot.hasData) {
           print("User is logged in: ${snapshot.data?.uid}");
           return const DashboardPage();
         }
-        
+
         // User is not logged in
         print("User is not logged in, showing login page");
         return const LoginPage();

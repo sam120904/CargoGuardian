@@ -6,12 +6,29 @@ import 'dart:js' as js;
 class PlatformImplementation {
   static void openUrlInBrowser(String url) {
     try {
-      // Use the custom JavaScript function defined in index.html
-      js.context.callMethod('openExternalUrl', [url]);
+      // Check if we're on iOS Safari
+      final userAgent = html.window.navigator.userAgent.toLowerCase();
+      final isIOSSafari = userAgent.contains('iphone') || 
+                          userAgent.contains('ipad') || 
+                          userAgent.contains('ipod');
+      
+      if (isIOSSafari) {
+        // For iOS Safari, use a direct approach
+        html.window.location.href = url;
+      } else {
+        // Use the custom JavaScript function defined in index.html
+        js.context.callMethod('openExternalUrl', [url]);
+      }
     } catch (e) {
       print("Error opening URL: $e");
       // Fallback to standard window.open
-      html.window.open(url, '_blank');
+      try {
+        html.window.open(url, '_blank');
+      } catch (e2) {
+        print("Fallback error opening URL: $e2");
+        // Last resort - direct navigation
+        html.window.location.href = url;
+      }
     }
   }
   
@@ -48,12 +65,22 @@ class PlatformImplementation {
       return false;
     }
   }
+
+  static bool isIOSSafari() {
+  final userAgent = html.window.navigator.userAgent.toLowerCase();
+  return (userAgent.contains('iphone') ||
+          userAgent.contains('ipad') ||
+          userAgent.contains('ipod')) &&
+      userAgent.contains('safari');
+}
+
   
   // Add a method to get location permission status
   static bool getLocationPermission() {
     try {
       // Call the JavaScript function defined in index.html
-      return js.context.callMethod('getLocationPermission') ?? false;
+      final result = js.context.callMethod('getLocationPermission');
+      return result == true;
     } catch (e) {
       print("Error getting location permission: $e");
       return false;
