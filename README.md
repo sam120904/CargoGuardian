@@ -4,7 +4,7 @@
 
 🌐 [Try the Live App](https://vector-shield-io-t-based-train-cargo-managment-system.vercel.app/)
 
-🏆 Developed at **HackHiest Hackathon 2025**, awarded **1st Place**.
+🏆 Developed at **HackHiest Hackathon 2025**, awarded **2nd Runner-Up**.
 
 ---
 
@@ -72,7 +72,7 @@ Vector Shield includes a hierarchical user access model:
 - 🔐 **Secure & Accountable**: Prevents unauthorized cargo access
 - 📊 **Transparent**: Cargo history and movement always documented
 - 🛠️ **Scalable**: Easily add more sensors or wagons
-- 🏆 **Proven Winner**: HackHiest 2025 1st Place project
+- 🏆 **Proven Winner**: HackHiest 2025 2nd Runner-Up Project
 
 ---
 
