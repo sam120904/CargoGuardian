@@ -43,48 +43,48 @@ class DefaultFirebaseOptions {
 
   // Load values from environment variables via config.dart
   static final FirebaseOptions web = FirebaseOptions(
-    apiKey: AppConfig.firebaseApiKey,
-    appId: AppConfig.firebaseAppId,
-    messagingSenderId: AppConfig.firebaseMessagingSenderId,
-    projectId: AppConfig.firebaseProjectId,
-    authDomain: '${AppConfig.firebaseProjectId}.firebaseapp.com',
-    storageBucket: AppConfig.firebaseStorageBucket,
+    apiKey: AppConfig.apiKey,
+    appId: AppConfig.appId,
+    messagingSenderId: AppConfig.messagingSenderId,
+    projectId: AppConfig.projectId,
+    authDomain: '${AppConfig.projectId}.firebaseapp.com',
+    storageBucket: AppConfig.storageBucket,
     measurementId: 'G-5BM9E22QY8',
   );
 
   static final FirebaseOptions android = FirebaseOptions(
-    apiKey: AppConfig.firebaseApiKey,
-    appId: AppConfig.firebaseAppId,
-    messagingSenderId: AppConfig.firebaseMessagingSenderId,
-    projectId: AppConfig.firebaseProjectId,
-    storageBucket: AppConfig.firebaseStorageBucket,
+    apiKey: AppConfig.apiKey,
+    appId: AppConfig.appId,
+    messagingSenderId: AppConfig.messagingSenderId,
+    projectId: AppConfig.projectId,
+    storageBucket: AppConfig.storageBucket,
   );
 
   static final FirebaseOptions ios = FirebaseOptions(
-    apiKey: AppConfig.firebaseApiKey,
-    appId: AppConfig.firebaseAppId,
-    messagingSenderId: AppConfig.firebaseMessagingSenderId,
-    projectId: AppConfig.firebaseProjectId,
-    storageBucket: AppConfig.firebaseStorageBucket,
+    apiKey: AppConfig.apiKey,
+    appId: AppConfig.appId,
+    messagingSenderId: AppConfig.messagingSenderId,
+    projectId: AppConfig.projectId,
+    storageBucket: AppConfig.storageBucket,
     iosBundleId: 'com.example.flutterApp',
   );
 
   static final FirebaseOptions macos = FirebaseOptions(
-    apiKey: AppConfig.firebaseApiKey,
-    appId: AppConfig.firebaseAppId,
-    messagingSenderId: AppConfig.firebaseMessagingSenderId,
-    projectId: AppConfig.firebaseProjectId,
-    storageBucket: AppConfig.firebaseStorageBucket,
+    apiKey: AppConfig.apiKey,
+    appId: AppConfig.appId,
+    messagingSenderId: AppConfig.messagingSenderId,
+    projectId: AppConfig.projectId,
+    storageBucket: AppConfig.storageBucket,
     iosBundleId: 'com.example.flutterApp',
   );
 
   static final FirebaseOptions windows = FirebaseOptions(
-    apiKey: AppConfig.firebaseApiKey,
-    appId: AppConfig.firebaseAppId,
-    messagingSenderId: AppConfig.firebaseMessagingSenderId,
-    projectId: AppConfig.firebaseProjectId,
-    authDomain: '${AppConfig.firebaseProjectId}.firebaseapp.com',
-    storageBucket: AppConfig.firebaseStorageBucket,
+    apiKey: AppConfig.apiKey,
+    appId: AppConfig.appId,
+    messagingSenderId: AppConfig.messagingSenderId,
+    projectId: AppConfig.projectId,
+    authDomain: '${AppConfig.projectId}.firebaseapp.com',
+    storageBucket: AppConfig.storageBucket,
     measurementId: 'G-SKL6V2N9NF',
   );
 }

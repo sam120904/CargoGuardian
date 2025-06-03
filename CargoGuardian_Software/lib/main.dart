@@ -620,11 +620,11 @@ class _EnhancedAuthWrapperState extends State<EnhancedAuthWrapper> {
     super.initState();
     // Enhanced timeout for iOS Safari
     final timeoutDuration = _isIOSSafari ? 8 : 5; // Longer timeout for iOS Safari
-    print("Setting auth timeout to ${timeoutDuration} seconds");
+    print("Setting auth timeout to $timeoutDuration seconds");
     
     _timeoutTimer = Timer(Duration(seconds: timeoutDuration), () {
       if (mounted) {
-        print("Auth timeout reached after ${timeoutDuration} seconds");
+        print("Auth timeout reached after $timeoutDuration seconds");
         setState(() {
           _timeoutReached = true;
         });

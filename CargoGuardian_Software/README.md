@@ -28,3 +28,9 @@ lib/
     ├── platform_mobile.dart
     └── platform_web.dart
 ```
+
+Test Build on Network
+
+```
+http-server build/web -p 8080 -a 0.0.0.0
+```
