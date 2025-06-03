@@ -1,4 +1,3 @@
-<!-- Replace your entire index.html with this version -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -8,122 +7,205 @@
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="CargoGuardian - Train Monitoring System">
 
-  <!-- iOS meta tags & icons -->
+  <!-- Enhanced iOS meta tags & icons -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="CargoGuardian">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="msapplication-tap-highlight" content="no">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <!-- Mobile viewport optimization -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- Enhanced mobile viewport optimization -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+  <!-- Content Security Policy for iOS Safari -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval' 'unsafe-inline';
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    media-src *;
+    img-src 'self' data: content: blob: https:;
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://www.gstatic.com;
+    connect-src 'self' https: wss: blob:;
+    font-src 'self' https://fonts.gstatic.com data:;
+  ">
 
   <title>CargoGuardian</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- Define JavaScript functions BEFORE they are used -->
+  <!-- Preload critical resources -->
+  <link rel="preload" href="flutter.js" as="script">
+  <link rel="dns-prefetch" href="//maps.googleapis.com">
+  <link rel="dns-prefetch" href="//www.gstatic.com">
+
   <script>
     // The value below is injected by flutter build, do not touch.
     var serviceWorkerVersion = null;
     
-    // Global variables
+    // Enhanced global variables with iOS Safari detection
     window.hasLocationPermission = false;
     window.googleMapsLoaded = false;
     window.mapInstances = {};
     window.isMobileBrowser = false;
     window.isIOSSafari = false;
+    window.isStandalone = false;
+    window.flutterInitialized = false;
     
-    // Detect mobile browser and iOS Safari specifically
+    // Enhanced browser detection with iOS Safari specific handling
     (function() {
       try {
         var userAgent = navigator.userAgent.toLowerCase();
+        var platform = navigator.platform ? navigator.platform.toLowerCase() : '';
+        
         window.isMobileBrowser = /mobile|android|iphone|ipad/.test(userAgent);
-        window.isIOSSafari = /iphone|ipad|ipod/.test(userAgent) && /safari/.test(userAgent);
-        console.log("Running on " + (window.isMobileBrowser ? "mobile" : "desktop") + " browser");
+        
+        // Enhanced iOS Safari detection
+        var isIOS = /iphone|ipad|ipod/.test(userAgent) || /iphone|ipad|ipod/.test(platform);
+        var isSafari = /safari/.test(userAgent) && !/chrome|crios|fxios/.test(userAgent);
+        window.isIOSSafari = isIOS && isSafari;
+        
+        // Check for standalone mode using multiple methods
+        window.isStandalone = false;
+        try {
+          // Method 1: Check navigator.standalone (iOS Safari specific)
+          if ('standalone' in navigator) {
+            window.isStandalone = navigator.standalone === true;
+          }
+          
+          // Method 2: Check display mode media query
+          if (!window.isStandalone && window.matchMedia) {
+            window.isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+          }
+          
+          // Method 3: Check for PWA installation indicators
+          if (!window.isStandalone) {
+            window.isStandalone = window.navigator.standalone === true;
+          }
+        } catch (e) {
+          console.log("Error checking standalone mode:", e);
+        }
+        
+        console.log("Browser detection:", {
+          isMobile: window.isMobileBrowser,
+          isIOSSafari: window.isIOSSafari,
+          isStandalone: window.isStandalone,
+          userAgent: userAgent,
+          platform: platform
+        });
+        
         if (window.isIOSSafari) {
-          console.log("Detected iOS Safari browser");
-          // Add iOS Safari specific class to body
           document.documentElement.classList.add('ios-safari');
+          
+          // Disable zoom and unwanted touch behaviors on iOS Safari
+          document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) {
+              e.preventDefault();
+            }
+          }, { passive: false });
+          
+          var lastTouchEnd = 0;
+          document.addEventListener('touchend', function(e) {
+            var now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+              e.preventDefault();
+            }
+            lastTouchEnd = now;
+          }, false);
+          
+          // Prevent pull-to-refresh on iOS Safari
+          document.addEventListener('touchmove', function(e) {
+            if (e.scale !== 1) {
+              e.preventDefault();
+            }
+          }, { passive: false });
         }
       } catch (e) {
         console.error("Error detecting browser type:", e);
       }
     })();
     
-    // Google Maps callback - Define this BEFORE loading the Google Maps API
+    // Enhanced Google Maps callback with error handling
     window.initGoogleMapsCallback = function() {
       console.log("Google Maps API loaded successfully");
       window.googleMapsLoaded = true;
     };
     
-    // Function to get location permission status - iOS safe version
+    window.googleMapsError = function() {
+      console.error("Failed to load Google Maps API");
+      window.googleMapsLoaded = false;
+    };
+    
+    // iOS Safari safe location permission functions
     window.getLocationPermission = function() {
       return window.hasLocationPermission || false;
     };
     
-    // Function to request location permission - iOS safe version
     window.requestLocationPermission = function() {
-      if (navigator.geolocation) {
-        try {
-          navigator.geolocation.getCurrentPosition(
-            function(position) {
-              console.log("Location permission granted");
-              window.hasLocationPermission = true;
-            },
-            function(error) {
-              console.log("Location permission denied or error:", error.message);
-              window.hasLocationPermission = false;
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-          );
-        } catch (e) {
-          console.error("Error requesting location permission:", e);
-          window.hasLocationPermission = false;
-        }
+      if (!navigator.geolocation) {
+        console.log("Geolocation not supported");
+        return;
+      }
+      
+      try {
+        navigator.geolocation.getCurrentPosition(
+          function(position) {
+            console.log("Location permission granted");
+            window.hasLocationPermission = true;
+          },
+          function(error) {
+            console.log("Location permission denied or error:", error.message);
+            window.hasLocationPermission = false;
+          },
+          { 
+            enableHighAccuracy: false, 
+            timeout: 15000, 
+            maximumAge: 300000 
+          }
+        );
+      } catch (e) {
+        console.error("Error requesting location permission:", e);
+        window.hasLocationPermission = false;
       }
     };
     
-    // Function to initialize a map - iOS safe version
+    // Enhanced map initialization with better error handling
     window.initializeMap = function(elementId, lat, lng, title) {
       if (!window.googleMapsLoaded) {
-        console.log("Google Maps not loaded yet, will try again later");
+        console.log("Google Maps not loaded yet, retrying...");
         setTimeout(function() {
           window.initializeMap(elementId, lat, lng, title);
-        }, 1000);
+        }, 2000);
         return;
       }
       
       try {
         console.log("Initializing map with ID:", elementId);
         
-        // Find the map container by ID
-        const mapContainer = document.getElementById(elementId);
+        var mapContainer = document.getElementById(elementId);
         if (!mapContainer) {
           console.error("Map container not found with ID:", elementId);
           return;
         }
         
-        // Create a map instance
-        const map = new google.maps.Map(mapContainer, {
+        var map = new google.maps.Map(mapContainer, {
           center: { lat: lat, lng: lng },
           zoom: 14,
-          mapTypeControl: true,
-          fullscreenControl: true,
-          streetViewControl: true,
-          zoomControl: true
+          mapTypeControl: !window.isMobileBrowser,
+          fullscreenControl: !window.isMobileBrowser,
+          streetViewControl: !window.isMobileBrowser,
+          zoomControl: true,
+          gestureHandling: window.isMobileBrowser ? 'cooperative' : 'auto'
         });
         
-        // Add a marker
-        const marker = new google.maps.Marker({
+        var marker = new google.maps.Marker({
           position: { lat: lat, lng: lng },
           map: map,
           title: title
         });
         
-        // Store map instance for later reference
         window.mapInstances[elementId] = {
           map: map,
           marker: marker
@@ -135,38 +217,134 @@
       }
     };
 
-    // Function to open a URL in a new tab - iOS safe version
+    // Enhanced URL opening with iOS Safari specific handling
     window.openExternalUrl = function(url) {
       console.log("openExternalUrl called with URL:", url);
-      if (url && typeof url === 'string') {
-        try {
-          // For iOS Safari, we need to handle this differently
-          if (window.isIOSSafari) {
+      if (!url || typeof url !== 'string') {
+        console.error("Invalid URL provided");
+        return;
+      }
+      
+      try {
+        if (window.isIOSSafari) {
+          // For iOS Safari, use location.href for better compatibility
+          if (window.isStandalone) {
+            // In standalone mode, open in same window
             window.location.href = url;
           } else {
-            // Use window.open for other browsers
-            const newWindow = window.open(url, '_blank');
-            // Focus the new window if possible
-            if (newWindow) {
-              newWindow.focus();
+            // In browser mode, try to open in new tab
+            var newWindow = window.open(url, '_blank');
+            if (!newWindow) {
+              // Fallback if popup blocked
+              window.location.href = url;
             }
           }
+        } else {
+          var newWindow = window.open(url, '_blank', 'noopener,noreferrer');
+          if (newWindow) {
+            newWindow.focus();
+          } else {
+            window.location.href = url;
+          }
+        }
+      } catch (e) {
+        console.error("Error opening URL:", e);
+        window.location.href = url;
+      }
+    };
+
+    // iOS Safari specific initialization function
+    window.initializeIOSSafari = function() {
+      if (!window.isIOSSafari) return;
+      
+      console.log("Initializing iOS Safari specific features");
+      
+      // Set viewport height for iOS Safari
+      function setViewportHeight() {
+        try {
+          var vh = window.innerHeight * 0.01;
+          document.documentElement.style.setProperty('--vh', vh + 'px');
+          console.log("Set viewport height to:", vh + 'px');
         } catch (e) {
-          console.error("Error opening URL:", e);
-          // Fallback method
-          window.location.href = url;
+          console.error("Error setting viewport height:", e);
         }
       }
+      
+      setViewportHeight();
+      window.addEventListener('resize', setViewportHeight);
+      window.addEventListener('orientationchange', function() {
+        setTimeout(setViewportHeight, 500);
+      });
+      
+      // Prevent rubber band scrolling
+      document.body.addEventListener('touchstart', function(e) {
+        if (e.target === document.body) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+      
+      document.body.addEventListener('touchend', function(e) {
+        if (e.target === document.body) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+      
+      document.body.addEventListener('touchmove', function(e) {
+        if (e.target === document.body) {
+          e.preventDefault();
+        }
+      }, { passive: false });
     };
   </script>
 
-  <!-- Add Google Maps API with callback - AFTER defining the callback function -->
-  <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDS3Qwxu0gTG5i0inF8V2-jdeFFhch9PSQ&callback=initGoogleMapsCallback&loading=async"></script>
+  <!-- Load Google Maps API with enhanced error handling -->
+  <script>
+    (function() {
+      var script = document.createElement('script');
+      script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyDS3Qwxu0gTG5i0inF8V2-jdeFFhch9PSQ&callback=initGoogleMapsCallback&loading=async';
+      script.onerror = window.googleMapsError;
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  </script>
   
   <style>
-    /* iOS Safari specific styles */
+    :root {
+      --vh: 1vh;
+    }
+    
+    /* Enhanced iOS Safari specific styles */
+    .ios-safari {
+      -webkit-overflow-scrolling: touch;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    .ios-safari body {
+      position: fixed;
+      overflow: hidden;
+      width: 100%;
+      height: 100vh;
+      height: calc(var(--vh, 1vh) * 100);
+    }
+    
     .ios-safari .flutter-loader {
-      animation-duration: 1.5s !important; /* Slower animation for iOS */
+      animation-duration: 2s !important;
+    }
+    
+    /* Prevent zoom on inputs for iOS Safari */
+    .ios-safari input[type="text"],
+    .ios-safari input[type="email"],
+    .ios-safari input[type="password"],
+    .ios-safari input[type="number"],
+    .ios-safari textarea,
+    .ios-safari select {
+      font-size: 16px !important;
+      transform: translateZ(0);
+      -webkit-appearance: none;
+      border-radius: 0;
     }
   </style>
 </head>
@@ -177,22 +355,31 @@
         margin: 0;
         padding: 0;
         background-color: #f0f7ff;
-        font-family: Arial, sans-serif;
-        overflow: hidden; /* Prevent scrolling during loading */
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
+        height: 100vh;
+        height: calc(var(--vh, 1vh) * 100);
       }
+      
       #loading {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         height: 100vh;
+        height: calc(var(--vh, 1vh) * 100);
         width: 100vw;
         position: fixed;
         top: 0;
         left: 0;
         z-index: 9999;
         background-color: #f0f7ff;
+        -webkit-user-select: none;
+        user-select: none;
       }
+      
       .spinner {
         width: 50px;
         height: 50px;
@@ -202,74 +389,143 @@
         animation: spin 1s linear infinite;
         margin-bottom: 20px;
       }
+      
       @keyframes spin {
-        to {transform: rotate(360deg);}
+        to { transform: rotate(360deg); }
       }
+      
       .loading-text {
         color: #4285f4;
         font-size: 18px;
         font-weight: 500;
+        text-align: center;
+        padding: 0 20px;
       }
+      
+      .loading-subtext {
+        color: #666;
+        font-size: 14px;
+        margin-top: 8px;
+        text-align: center;
+        padding: 0 20px;
+      }
+      
       .error-container {
         display: none;
         text-align: center;
         padding: 20px;
-        max-width: 80%;
+        max-width: 90%;
       }
+      
       .error-title {
         color: #d32f2f;
         font-size: 20px;
         margin-bottom: 10px;
+        font-weight: 600;
       }
+      
       .error-message {
         color: #555;
         margin-bottom: 20px;
+        line-height: 1.4;
       }
+      
       .retry-button {
         background-color: #4285f4;
         color: white;
         border: none;
-        padding: 10px 20px;
-        border-radius: 4px;
+        padding: 12px 24px;
+        border-radius: 6px;
         cursor: pointer;
         font-size: 16px;
+        font-weight: 500;
+        transition: background-color 0.2s;
+        -webkit-appearance: none;
       }
+      
       .retry-button:hover {
         background-color: #3367d6;
+      }
+      
+      .retry-button:active {
+        background-color: #2851a3;
       }
     </style>
     <div class="spinner"></div>
     <div class="loading-text">Loading CargoGuardian...</div>
+    <div class="loading-subtext" id="loading-subtext">Initializing application...</div>
     <div id="error-container" class="error-container">
-      <div class="error-title">Initialization Error</div>
-      <div id="error-message" class="error-message">An error occurred while loading the application.</div>
-      <button id="retry-button" class="retry-button">Try Again</button>
+      <div class="error-title">Loading Error</div>
+      <div id="error-message" class="error-message">Failed to load the application. This might be due to network issues or browser compatibility.</div>
+      <button id="retry-button" class="retry-button">Reload App</button>
     </div>
   </div>
 
   <script>
-    // Function to show error message
-    function showError(message) {
+    // Enhanced error handling and loading management
+    var loadingSteps = [
+      "Initializing application...",
+      "Loading Flutter engine...",
+      "Starting CargoGuardian...",
+      "Almost ready..."
+    ];
+    var currentStep = 0;
+    var loadingInterval;
+    
+    function updateLoadingText() {
+      var subtextElement = document.getElementById('loading-subtext');
+      if (subtextElement && currentStep < loadingSteps.length) {
+        subtextElement.textContent = loadingSteps[currentStep];
+        currentStep++;
+      }
+    }
+    
+    function showError(message, showRetry) {
       var loading = document.getElementById('loading');
       var errorContainer = document.getElementById('error-container');
       var errorMessage = document.getElementById('error-message');
       var spinner = document.querySelector('.spinner');
       var loadingText = document.querySelector('.loading-text');
+      var loadingSubtext = document.querySelector('.loading-subtext');
+      var retryButton = document.getElementById('retry-button');
+      
+      if (loadingInterval) {
+        clearInterval(loadingInterval);
+      }
       
       if (spinner) spinner.style.display = 'none';
       if (loadingText) loadingText.style.display = 'none';
+      if (loadingSubtext) loadingSubtext.style.display = 'none';
       if (errorMessage) errorMessage.textContent = message || 'Failed to initialize the application.';
       if (errorContainer) errorContainer.style.display = 'block';
+      if (retryButton) retryButton.style.display = showRetry !== false ? 'block' : 'none';
     }
     
-    // Request location permission after page loads
-    window.addEventListener('load', function() {
-      // Safe call to requestLocationPermission
-      if (typeof window.requestLocationPermission === 'function') {
-        setTimeout(window.requestLocationPermission, 2000);
-      } else {
-        console.error("requestLocationPermission function not defined");
+    function hideLoading() {
+      var loading = document.getElementById('loading');
+      if (loading) {
+        loading.style.transition = 'opacity 0.5s ease';
+        loading.style.opacity = '0';
+        setTimeout(function() {
+          if (loading && loading.parentNode) {
+            loading.parentNode.removeChild(loading);
+          }
+        }, 500);
       }
+      if (loadingInterval) {
+        clearInterval(loadingInterval);
+      }
+    }
+    
+    // Enhanced Flutter initialization with iOS Safari specific handling
+    window.addEventListener('load', function() {
+      console.log("Page loaded, starting initialization");
+      
+      // Initialize iOS Safari specific features
+      window.initializeIOSSafari();
+      
+      // Start loading text animation
+      loadingInterval = setInterval(updateLoadingText, 1500);
       
       // Set up retry button
       var retryButton = document.getElementById('retry-button');
@@ -278,44 +534,65 @@
           window.location.reload();
         });
       }
-    });
-    
-    // Improved Flutter initialization with error handling and iOS detection
-    window.addEventListener('load', function() {
-      var loading = document.getElementById('loading');
       
-      // Load flutter.js with proper error handling
+      // Request location permission after a delay
+      setTimeout(function() {
+        if (typeof window.requestLocationPermission === 'function') {
+          window.requestLocationPermission();
+        }
+      }, 3000);
+      
+      // Load flutter.js with enhanced error handling
       var scriptTag = document.createElement('script');
       scriptTag.src = 'flutter.js';
       scriptTag.type = 'application/javascript';
       
+      var scriptLoadTimeout = setTimeout(function() {
+        console.error("flutter.js load timeout");
+        showError("Failed to load application resources. Please check your internet connection and try again.");
+      }, 20000); // Increased timeout for iOS Safari
+      
       scriptTag.onload = function() {
+        clearTimeout(scriptLoadTimeout);
         console.log("flutter.js loaded successfully");
         initFlutterApp();
       };
       
       scriptTag.onerror = function() {
+        clearTimeout(scriptLoadTimeout);
         console.error("Failed to load flutter.js");
         showError("Failed to load application resources. Please check your internet connection and try again.");
       };
       
       document.body.appendChild(scriptTag);
       
-      // Initialize Flutter app with iOS-specific handling
+      // Enhanced Flutter app initialization
       function initFlutterApp() {
         if (typeof _flutter === 'undefined') {
           console.log("Waiting for flutter.js to load...");
-          setTimeout(initFlutterApp, 100);
+          setTimeout(initFlutterApp, 200);
           return;
         }
         
-        // Add extra delay for iOS Safari
-        var initDelay = window.isIOSSafari ? 2000 : (window.isMobileBrowser ? 1000 : 0);
-        console.log("Using initialization delay of " + initDelay + "ms");
+        // Enhanced delay calculation for different platforms
+        var initDelay = 500; // Default delay
+        if (window.isIOSSafari) {
+          initDelay = window.isStandalone ? 4000 : 5000; // Longer delay for iOS Safari
+        } else if (window.isMobileBrowser) {
+          initDelay = 2000; // Medium delay for other mobile browsers
+        }
+        
+        console.log("Using initialization delay of " + initDelay + "ms for platform:", {
+          isIOSSafari: window.isIOSSafari,
+          isMobile: window.isMobileBrowser,
+          isStandalone: window.isStandalone
+        });
         
         setTimeout(function() {
           try {
-            // Initialize Flutter with better error handling
+            updateLoadingText();
+            
+            // Enhanced Flutter initialization with better error handling
             _flutter.loader.loadEntrypoint({
               serviceWorker: {
                 serviceWorkerVersion: serviceWorkerVersion,
@@ -323,46 +600,85 @@
               onEntrypointLoaded: async function(engineInitializer) {
                 try {
                   console.log("Flutter entrypoint loaded, initializing engine...");
+                  updateLoadingText();
                   
-                  // Always use html renderer for iOS Safari, canvaskit for desktop
-                  const renderer = window.isIOSSafari ? "html" : (window.isMobileBrowser ? "html" : "canvaskit");
-                  console.log("Using renderer:", renderer);
+                  // Enhanced renderer selection with iOS Safari optimization
+                  var renderer = "html"; // Default to HTML renderer for better iOS Safari compatibility
+                  if (!window.isMobileBrowser && !window.isIOSSafari) {
+                    renderer = "canvaskit"; // Use CanvasKit only for desktop non-Safari
+                  }
                   
-                  const appRunner = await engineInitializer.initializeEngine({
-                    renderer: renderer,
-                    useColorEmoji: true
+                  console.log("Using renderer:", renderer, "for platform:", {
+                    isIOSSafari: window.isIOSSafari,
+                    isMobile: window.isMobileBrowser
                   });
                   
+                  var engineConfig = {
+                    renderer: renderer,
+                    useColorEmoji: true
+                  };
+                  
+                  // iOS Safari specific engine configuration
+                  if (window.isIOSSafari) {
+                    engineConfig.canvasKitBaseUrl = null; // Disable CanvasKit for iOS Safari
+                    engineConfig.debugShowSemanticsNodes = false;
+                  }
+                  
+                  const appRunner = await engineInitializer.initializeEngine(engineConfig);
+                  
                   console.log("Flutter engine initialized, running app...");
+                  updateLoadingText();
+                  
                   await appRunner.runApp();
                   
-                  // Hide loading screen after app is loaded
-                  if (loading) {
-                    // Fade out loading screen
-                    loading.style.transition = 'opacity 0.5s ease';
-                    loading.style.opacity = '0';
-                    
-                    // Remove loading screen after fade out
-                    setTimeout(function() {
-                      if (loading && loading.parentNode) {
-                        loading.parentNode.removeChild(loading);
-                      }
-                    }, 500);
-                  }
+                  console.log("Flutter app started successfully");
+                  window.flutterInitialized = true;
+                  
+                  // Hide loading screen after successful initialization
+                  setTimeout(hideLoading, 1500); // Longer delay for iOS Safari
+                  
                 } catch (e) {
                   console.error('Flutter initialization error:', e);
-                  showError('Failed to initialize Flutter: ' + e.message);
+                  showError('Failed to initialize Flutter application: ' + e.message);
                 }
               }
             }).catch(function(err) {
               console.error('Flutter loader error:', err);
-              showError('Failed to load application resources: ' + err.message);
+              showError('Failed to load application: ' + err.message);
             });
           } catch (e) {
             console.error("Error during Flutter initialization:", e);
             showError("Failed to initialize the application: " + e.message);
           }
         }, initDelay);
+      }
+      
+      // Fallback timeout for the entire initialization process
+      setTimeout(function() {
+        if (!window.flutterInitialized) {
+          console.error("Flutter initialization timeout");
+          showError("Application is taking longer than expected to load. This might be due to slow network or browser compatibility issues.", true);
+        }
+      }, 45000); // 45 second timeout for iOS Safari
+    });
+    
+    // Handle page visibility changes (iOS Safari specific)
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'visible' && window.isIOSSafari) {
+        console.log("Page became visible on iOS Safari");
+        // Refresh viewport height on iOS Safari when page becomes visible
+        var vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', vh + 'px');
+      }
+    });
+    
+    // Handle orientation changes (iOS Safari specific)
+    window.addEventListener('orientationchange', function() {
+      if (window.isIOSSafari) {
+        setTimeout(function() {
+          var vh = window.innerHeight * 0.01;
+          document.documentElement.style.setProperty('--vh', vh + 'px');
+        }, 500);
       }
     });
   </script>
