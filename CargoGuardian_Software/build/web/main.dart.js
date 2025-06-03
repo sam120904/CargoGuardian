@@ -86235,7 +86235,7 @@ d=a5.k4
 c=a5.p1
 b=A.b([new A.b_(0,B.y,A.ae(13,B.i.t()>>>16&255,B.i.t()>>>8&255,B.i.t()&255),B.aY,10)],t.V)
 a=t.p
-a0=A.bk(A.b([A.bj(a6,A.bB(B.of,B.X,a6,24),B.m,a6,new A.aW(B.cd,a6,a6,a6,a6,a6,B.bo),a6,a6,a6,a6,B.nH,a6,a6,a6),B.af,new A.l1(1,B.f0,A.ci(A.b([A.ax("Vector Shield",a6,B.bJ,a6,A.aC(a6,a6,B.d6,a6,a6,a6,a6,a6,a6,a6,a6,22,a6,a6,B.G,a6,a6,!0,a6,a6,a6,a6,a6,a6,a6,a6),a6,a6),A.ax("Train Monitoring Dashboard",a6,B.bJ,a6,A.aC(a6,a6,B.W,a6,a6,a6,a6,a6,a6,a6,a6,14,a6,a6,a6,a6,a6,!0,a6,a6,a6,a6,a6,a6,a6,a6),a6,a6)],a),B.aV,B.q,B.b4),a6)],a),B.q,B.b4)
+a0=A.bk(A.b([A.bj(a6,A.bB(B.of,B.X,a6,24),B.m,a6,new A.aW(B.cd,a6,a6,a6,a6,a6,B.bo),a6,a6,a6,a6,B.nH,a6,a6,a6),B.af,new A.l1(1,B.f0,A.ci(A.b([A.ax("CargoGuardian",a6,B.bJ,a6,A.aC(a6,a6,B.d6,a6,a6,a6,a6,a6,a6,a6,a6,22,a6,a6,B.G,a6,a6,!0,a6,a6,a6,a6,a6,a6,a6,a6),a6,a6),A.ax("Train Monitoring Dashboard",a6,B.bJ,a6,A.aC(a6,a6,B.W,a6,a6,a6,a6,a6,a6,a6,a6,14,a6,a6,a6,a6,a6,!0,a6,a6,a6,a6,a6,a6,a6,a6),a6,a6)],a),B.aV,B.q,B.b4),a6)],a),B.q,B.b4)
 a1=a5.k4
 a2=a5.ok
 if(s==null)a3=a6
@@ -86832,7 +86832,7 @@ p=A.aMh(new A.di(4,r,B.p),B.FW,new A.di(4,q,B.p),new A.di(4,A.aS(8),B.Ba),B.hb,!
 p=A.va(s,s,new A.tl(A.mD(s,s,s,s,s,s,s,s,s,s,s,s,B.nA,s,new A.bN(A.aS(8),B.p),s,s,s,s)),p,B.bZ,s)
 if(!this.d)r=B.AR
 else{r=this.e
-r=r!=null?new A.Ld(r,s):B.AT}return new A.A1(r,A.aE(["/login",new A.ape(),"/signup",new A.apf(),"/dashboard",new A.apg()],t.N,t.Ab),"Vector Shield",p,!1,s)}}
+r=r!=null?new A.Ld(r,s):B.AT}return new A.A1(r,A.aE(["/login",new A.ape(),"/signup",new A.apf(),"/dashboard",new A.apg()],t.N,t.Ab),"CargoGuardian",p,!1,s)}}
 A.apc.prototype={
 $0(){this.a.d=!0},
 $S:0}
@@ -86852,7 +86852,7 @@ $1(a){return B.nl},
 $S:546}
 A.Ij.prototype={
 N(a){var s=null,r=A.b([B.cd,B.cA],t.t_),q=A.b([new A.b_(0,B.y,A.ae(51,B.bZ.t()>>>16&255,B.bZ.t()>>>8&255,B.bZ.t()&255),B.fj,10)],t.V)
-return A.Bx(A.bj(s,A.cE(A.ci(A.b([A.bj(s,A.bB(B.of,B.X,s,48),B.m,s,new A.aW(B.j,s,s,s,q,s,B.bo),s,s,s,s,B.aR,s,s,s),B.ds,A.ax("Vector Shield",s,s,s,A.aC(s,s,B.d6,s,s,s,s,s,s,s,s,28,s,s,B.G,s,s,!0,s,s,s,s,s,s,s,s),s,s),B.cP,A.ax("Train Cargo Monitoring System",s,s,s,A.aC(s,s,B.a7,s,s,s,s,s,s,s,s,16,s,s,s,s,s,!0,s,s,s,s,s,s,s,s),s,s),B.lp,A.da(A.oO(s,3,new A.oB(B.b8,t.ZU)),40,40),B.bg,A.ax("Initializing...",s,s,s,A.aC(s,s,B.W,s,s,s,s,s,s,s,s,16,s,s,s,s,s,!0,s,s,s,s,s,s,s,s),s,s)],t.p),B.a_,B.aG,B.n),s,s),B.m,s,new A.aW(s,s,s,s,s,new A.f2(B.bx,B.dB,B.aI,r,s,s),B.x),s,s,s,s,s,s,s,s))}}
+return A.Bx(A.bj(s,A.cE(A.ci(A.b([A.bj(s,A.bB(B.of,B.X,s,48),B.m,s,new A.aW(B.j,s,s,s,q,s,B.bo),s,s,s,s,B.aR,s,s,s),B.ds,A.ax("CargoGuardian",s,s,s,A.aC(s,s,B.d6,s,s,s,s,s,s,s,s,28,s,s,B.G,s,s,!0,s,s,s,s,s,s,s,s),s,s),B.cP,A.ax("Train Cargo Monitoring System",s,s,s,A.aC(s,s,B.a7,s,s,s,s,s,s,s,s,16,s,s,s,s,s,!0,s,s,s,s,s,s,s,s),s,s),B.lp,A.da(A.oO(s,3,new A.oB(B.b8,t.ZU)),40,40),B.bg,A.ax("Initializing...",s,s,s,A.aC(s,s,B.W,s,s,s,s,s,s,s,s,16,s,s,s,s,s,!0,s,s,s,s,s,s,s,s),s,s)],t.p),B.a_,B.aG,B.n),s,s),B.m,s,new A.aW(s,s,s,s,s,new A.f2(B.bx,B.dB,B.aI,r,s,s),B.x),s,s,s,s,s,s,s,s))}}
 A.Ld.prototype={
 N(a){var s=null,r=A.b([B.cd,B.cA],t.t_),q=A.bB(B.cG,B.a4,s,60),p=A.ax("Application Initialization Error",s,s,s,A.aC(s,s,B.a4,s,s,s,s,s,s,s,s,22,s,s,B.G,s,s,!0,s,s,s,s,s,s,s,s),B.bv,s),o=this.c
 return A.Bx(A.bj(s,A.cE(new A.cc(B.nD,A.ci(A.b([q,B.cO,p,B.cO,A.ax(o==null?"Failed to initialize the application. Please check your configuration.":o,s,s,s,B.SN,B.bv,s),B.PO,A.yA(!1,B.V9,s,s,s,s,s,s,new A.a6E(a),s,s)],t.p),B.a_,B.aG,B.n),s),s,s),B.m,s,new A.aW(s,s,s,s,s,new A.f2(B.bx,B.dB,B.aI,r,s,s),B.x),s,s,s,s,s,s,s,s))}}

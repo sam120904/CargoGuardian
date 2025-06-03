@@ -1049,7 +1049,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'Vector Shield',
+                              'CargoGuardian',
                               style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,

@@ -149,7 +149,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Vector Shield',
+      title: 'CargoGuardian',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
@@ -241,7 +241,7 @@ class AppLoadingScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                "Vector Shield",
+                "CargoGuardian",
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,

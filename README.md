@@ -1,6 +1,6 @@
-### 🚆 Vector Shield - IoT-Based Train Cargo Management System
+### 🚆 CargoGuardian - IoT-Based Train Cargo Management System
 
-**Vector Shield** is a smart, IoT-powered system that automates the monitoring, clearance, and tracking of train cargo. Designed for efficiency, safety, and transparency, it enables railway operators to detect overloading, prevent theft, and keep accurate, automated records of cargo movement — all from a single cross-platform application.
+**CargoGuardian** is a smart, IoT-powered system that automates the monitoring, clearance, and tracking of train cargo. Designed for efficiency, safety, and transparency, it enables railway operators to detect overloading, prevent theft, and keep accurate, automated records of cargo movement — all from a single cross-platform application.
 
 🌐 [Try the Live App](https://vector-shield-io-t-based-train-cargo-managment-system.vercel.app/)
 
@@ -10,7 +10,7 @@
 
 ## 📦 Project Overview
 
-Vector Shield enhances railway logistics through **automated weight monitoring**, **live GPS tracking**, and **remote clearance capabilities**. By integrating IoT sensors with a smart app interface, it:
+CargoGuardian enhances railway logistics through **automated weight monitoring**, **live GPS tracking**, and **remote clearance capabilities**. By integrating IoT sensors with a smart app interface, it:
 
 - Detects **overload/underload conditions** and blocks unsafe cargo.
 - Uses **RFID or mobile app** for clearance—both online and offline.
@@ -42,7 +42,7 @@ Vector Shield enhances railway logistics through **automated weight monitoring**
 - Easy to retrieve logs for audits, reports, and investigations
 
 ### 🧑‍💼 Role-Based Access System
-Vector Shield includes a hierarchical user access model:
+CargoGuardian includes a hierarchical user access model:
 - **Worker Level**: Can scan cargo, view current train status, and submit logs
 - **Train Master Level**: Can view current and past train cargo logs, authorize train clearances
 - **Admin/Authority Level**: Full access to all historical records, analytics dashboards, and permission management
@@ -66,7 +66,7 @@ Vector Shield includes a hierarchical user access model:
 
 ---
 
-## 🌟 Why Vector Shield?
+## 🌟 Why CargoGuardian?
 
 - 🔄 **Fully Automated**: Reduces manual checks and paperwork
 - 🔐 **Secure & Accountable**: Prevents unauthorized cargo access
