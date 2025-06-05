@@ -28,7 +28,7 @@ class ConnectionIndicator extends StatelessWidget {
     switch (status) {
       case ConnectionStatus.checking:
         color = blinking ? Colors.grey.shade400 : Colors.grey.shade600;
-        label = 'Checking';
+        label = 'Checking...';
         icon = Icons.sensors;
         break;
       case ConnectionStatus.connecting:

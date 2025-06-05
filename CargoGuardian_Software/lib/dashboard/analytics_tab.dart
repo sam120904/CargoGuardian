@@ -17,9 +17,6 @@ class AnalyticsTab extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
-    // Calculate responsive grid columns based on screen width
-    int crossAxisCount = screenSize.width < 600 ? 2 : 4;
-    
     return SingleChildScrollView(
       child: Center(
         child: ConstrainedBox(
@@ -57,57 +54,208 @@ class AnalyticsTab extends StatelessWidget {
                   ),
                 ),
               
-              // Weight History Graph - Now with real-time data
-              _buildWeightHistoryCard(context),
+              // Weight Trend Chart
+              Container(
+                height: 300,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.trending_up,
+                          color: Colors.blue.shade700,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Weight Trend Analysis',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (data.isLoadingHistory)
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.blue.shade700,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: data.connectionStatus == ConnectionStatus.disconnected
+                        ? _buildOfflineChart()
+                        : data.isLoadingHistory
+                          ? _buildLoadingChart()
+                          : _buildWeightChart(),
+                    ),
+                  ],
+                ),
+              ),
               
               const SizedBox(height: 16),
               
-              // Analytics Cards - Now 4 cards in one row on wide screens, 2 on mobile
+              // Statistics Cards
               GridView(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
+                  crossAxisCount: screenSize.width < 600 ? 2 : 4,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 1.5,
+                  childAspectRatio: 1.2,
                 ),
                 children: [
-                  _buildAnalyticsCard(
-                    'Avg. Weight',
-                    '${(data.weightHistory.isEmpty ? 0 : data.weightHistory.reduce((a, b) => a + b) / data.weightHistory.length).toStringAsFixed(1)} tons',
-                    Icons.scale,
-                    Colors.purple,
-                    '+${(data.currentWeight - (data.weightHistory.isNotEmpty ? data.weightHistory.first : data.currentWeight)).toStringAsFixed(1)} from start',
-                    data.connectionStatus == ConnectionStatus.disconnected,
-                  ),
-                  _buildAnalyticsCard(
-                    'Alerts',
-                    data.hasAlert ? "1" : "0",
-                    Icons.warning_amber,
-                    Colors.orange,
-                    data.hasAlert ? '1 active' : 'No active alerts',
-                    data.connectionStatus == ConnectionStatus.disconnected,
-                  ),
-                  _buildAnalyticsCard(
-                    'Efficiency',
-                    data.connectionStatus == ConnectionStatus.disconnected
-                      ? '0%'
-                      : '${((data.currentWeight / data.maxWeightLimit) * 100).toStringAsFixed(0)}%',
-                    Icons.speed,
-                    Colors.green,
-                    'Load efficiency',
-                    data.connectionStatus == ConnectionStatus.disconnected,
-                  ),
-                  _buildAnalyticsCard(
-                    'Distance',
-                    '1,245 km',
-                    Icons.route,
+                  _buildStatCard(
+                    'Average Weight',
+                    data.connectionStatus == ConnectionStatus.disconnected 
+                      ? '0.0 tons' 
+                      : '${_calculateAverage().toStringAsFixed(1)} tons',
+                    Icons.analytics,
                     Colors.blue,
-                    'This month',
+                    data.connectionStatus == ConnectionStatus.disconnected,
+                  ),
+                  _buildStatCard(
+                    'Peak Weight',
+                    data.connectionStatus == ConnectionStatus.disconnected 
+                      ? '0.0 tons' 
+                      : '${_calculatePeak().toStringAsFixed(1)} tons',
+                    Icons.trending_up,
+                    Colors.green,
+                    data.connectionStatus == ConnectionStatus.disconnected,
+                  ),
+                  _buildStatCard(
+                    'Min Weight',
+                    data.connectionStatus == ConnectionStatus.disconnected 
+                      ? '0.0 tons' 
+                      : '${_calculateMin().toStringAsFixed(1)} tons',
+                    Icons.trending_down,
+                    Colors.orange,
+                    data.connectionStatus == ConnectionStatus.disconnected,
+                  ),
+                  _buildStatCard(
+                    'Variance',
+                    data.connectionStatus == ConnectionStatus.disconnected 
+                      ? '0.0%' 
+                      : '${_calculateVariance().toStringAsFixed(1)}%',
+                    Icons.show_chart,
+                    Colors.purple,
                     data.connectionStatus == ConnectionStatus.disconnected,
                   ),
                 ],
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Performance Metrics
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.assessment,
+                          color: Colors.blue.shade700,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Performance Metrics',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildMetricItem(
+                            'Load Efficiency',
+                            data.connectionStatus == ConnectionStatus.disconnected 
+                              ? '0%' 
+                              : '${_calculateLoadEfficiency().toStringAsFixed(1)}%',
+                            data.connectionStatus == ConnectionStatus.disconnected 
+                              ? Colors.grey 
+                              : _calculateLoadEfficiency() > 80 
+                                ? Colors.green 
+                                : _calculateLoadEfficiency() > 60 
+                                  ? Colors.orange 
+                                  : Colors.red,
+                            data.connectionStatus == ConnectionStatus.disconnected,
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildMetricItem(
+                            'Weight Stability',
+                            data.connectionStatus == ConnectionStatus.disconnected 
+                              ? 'N/A' 
+                              : _calculateStability(),
+                            data.connectionStatus == ConnectionStatus.disconnected 
+                              ? Colors.grey 
+                              : _calculateVariance() < 5 
+                                ? Colors.green 
+                                : _calculateVariance() < 15 
+                                  ? Colors.orange 
+                                  : Colors.red,
+                            data.connectionStatus == ConnectionStatus.disconnected,
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildMetricItem(
+                            'Compliance',
+                            data.connectionStatus == ConnectionStatus.disconnected 
+                              ? 'N/A' 
+                              : data.isOverweight || data.isUnderweight 
+                                ? 'Non-Compliant' 
+                                : 'Compliant',
+                            data.connectionStatus == ConnectionStatus.disconnected 
+                              ? Colors.grey 
+                              : data.isOverweight || data.isUnderweight 
+                                ? Colors.red 
+                                : Colors.green,
+                            data.connectionStatus == ConnectionStatus.disconnected,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -116,329 +264,208 @@ class AnalyticsTab extends StatelessWidget {
     );
   }
   
-  Widget _buildWeightHistoryCard(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+  Widget _buildOfflineChart() {
+    return Center(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.show_chart,
-                    color: Colors.blue.shade700,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Weight History',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                ],
-              ),
-              TextButton.icon(
-                icon: Icon(
-                  Icons.calendar_today,
-                  size: 16,
-                  color: Colors.blue.shade700,
-                ),
-                label: Text(
-                  'Last 24 hours',
-                  style: TextStyle(
-                    color: Colors.blue.shade700,
-                    fontSize: 14,
-                  ),
-                ),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  minimumSize: Size.zero,
-                ),
-                onPressed: () {
-                  // Show time range selector
-                },
-              ),
-            ],
+          Icon(
+            Icons.sensors_off,
+            size: 64,
+            color: Colors.grey.shade400,
           ),
           const SizedBox(height: 16),
-          SizedBox(
-            height: 200,
-            child: data.isLoadingHistory
-                ? Center(
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.blue.shade700,
-                    ),
-                  )
-                : data.connectionStatus == ConnectionStatus.disconnected
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.sensors_off,
-                            size: 48,
-                            color: Colors.grey.shade400,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'IoT device is offline',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Weight history data unavailable',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : LineChart(
-                      LineChartData(
-                        gridData: FlGridData(
-                          show: true,
-                          drawVerticalLine: true,
-                          horizontalInterval: 10,
-                          verticalInterval: 1,
-                          getDrawingHorizontalLine: (value) {
-                            return FlLine(
-                              color: Colors.grey.shade200,
-                              strokeWidth: 1,
-                            );
-                          },
-                          getDrawingVerticalLine: (value) {
-                            return FlLine(
-                              color: Colors.grey.shade200,
-                              strokeWidth: 1,
-                            );
-                          },
-                        ),
-                        titlesData: FlTitlesData(
-                          show: true,
-                          rightTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          topTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize: 28,
-                              interval: 1,
-                              getTitlesWidget: (value, meta) {
-                                String text = '';
-                                switch (value.toInt()) {
-                                  case 0:
-                                    text = '6h ago';
-                                    break;
-                                  case 1:
-                                    text = '5h ago';
-                                    break;
-                                  case 2:
-                                    text = '4h ago';
-                                    break;
-                                  case 3:
-                                    text = '3h ago';
-                                    break;
-                                  case 4:
-                                    text = '2h ago';
-                                    break;
-                                  case 5:
-                                    text = '1h ago';
-                                    break;
-                                }
-                                
-                                return Text(
-                                  text,
-                                  style: TextStyle(
-                                    color: Colors.grey.shade600,
-                                    fontSize: 11,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              interval: 10,
-                              getTitlesWidget: (value, meta) {
-                                return Text(
-                                  '${value.toInt()}',
-                                  style: TextStyle(
-                                    color: Colors.grey.shade600,
-                                    fontSize: 11,
-                                  ),
-                                );
-                              },
-                              reservedSize: 36,
-                            ),
-                          ),
-                        ),
-                        borderData: FlBorderData(
-                          show: true,
-                          border: Border.all(color: Colors.grey.shade200),
-                        ),
-                        minX: 0,
-                        maxX: 5,
-                        minY: 0,
-                        maxY: 60,
-                        lineBarsData: [
-                          LineChartBarData(
-                            spots: data.weightData,
-                            isCurved: true,
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.blue.shade400,
-                                Colors.blue.shade700,
-                              ],
-                            ),
-                            barWidth: 4,
-                            isStrokeCapRound: true,
-                            dotData: FlDotData(
-                              show: true,
-                              getDotPainter: (spot, percent, barData, index) {
-                                return FlDotCirclePainter(
-                                  radius: 4,
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                  strokeColor: Colors.blue.shade700,
-                                );
-                              },
-                            ),
-                            belowBarData: BarAreaData(
-                              show: true,
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.blue.shade200.withOpacity(0.3),
-                                  Colors.blue.shade700.withOpacity(0.0),
-                                ],
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                              ),
-                            ),
-                          ),
-                          // Add threshold lines
-                          LineChartBarData(
-                            spots: [
-                              FlSpot(0, data.maxWeightLimit),
-                              FlSpot(5, data.maxWeightLimit),
-                            ],
-                            isCurved: false,
-                            color: Colors.red.shade300,
-                            barWidth: 1.5,
-                            isStrokeCapRound: true,
-                            dotData: FlDotData(show: false),
-                            dashArray: [5, 5],
-                          ),
-                          LineChartBarData(
-                            spots: [
-                              FlSpot(0, data.minWeightLimit),
-                              FlSpot(5, data.minWeightLimit),
-                            ],
-                            isCurved: false,
-                            color: Colors.amber.shade300,
-                            barWidth: 1.5,
-                            isStrokeCapRound: true,
-                            dotData: FlDotData(show: false),
-                            dashArray: [5, 5],
-                          ),
-                        ],
-                      ),
-                    ),
+          Text(
+            'IoT device is offline',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade700,
+            ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade500,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Weight',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Container(
-                width: 10,
-                height: 2.5,
-                decoration: BoxDecoration(
-                  color: Colors.red.shade300,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Max',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Container(
-                width: 10,
-                height: 2.5,
-                decoration: BoxDecoration(
-                  color: Colors.amber.shade300,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Min',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ],
+          const SizedBox(height: 8),
+          Text(
+            'Weight data unavailable',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+            ),
           ),
         ],
       ),
     );
   }
   
-  Widget _buildAnalyticsCard(
-    String title,
-    String value,
-    IconData icon,
-    MaterialColor color,
-    String subtitle,
-    bool isOffline,
-  ) {
+  Widget _buildLoadingChart() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 40,
+            height: 40,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              color: Colors.blue.shade700,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Loading weight data...',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey.shade700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildWeightChart() {
+    if (data.weightData.isEmpty) {
+      return Center(
+        child: Text(
+          'No weight data available',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey.shade600,
+          ),
+        ),
+      );
+    }
+    
+    return LineChart(
+      LineChartData(
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: true,
+          horizontalInterval: 10,
+          verticalInterval: 1,
+          getDrawingHorizontalLine: (value) {
+            return FlLine(
+              color: Colors.grey.shade300,
+              strokeWidth: 1,
+            );
+          },
+          getDrawingVerticalLine: (value) {
+            return FlLine(
+              color: Colors.grey.shade300,
+              strokeWidth: 1,
+            );
+          },
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 30,
+              interval: 1,
+              getTitlesWidget: (double value, TitleMeta meta) {
+                const style = TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                );
+                return Text('${value.toInt()}', style: style);
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              interval: 10,
+              getTitlesWidget: (double value, TitleMeta meta) {
+                const style = TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                );
+                return Text('${value.toInt()}', style: style);
+              },
+              reservedSize: 42,
+            ),
+          ),
+        ),
+        borderData: FlBorderData(
+          show: true,
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        minX: 0,
+        maxX: 5,
+        minY: 0,
+        maxY: 80,
+        lineBarsData: [
+          LineChartBarData(
+            spots: data.weightData,
+            isCurved: true,
+            gradient: LinearGradient(
+              colors: [
+                Colors.blue.shade400,
+                Colors.blue.shade600,
+              ],
+            ),
+            barWidth: 3,
+            isStrokeCapRound: true,
+            dotData: FlDotData(
+              show: true,
+              getDotPainter: (spot, percent, barData, index) {
+                return FlDotCirclePainter(
+                  radius: 4,
+                  color: Colors.blue.shade700,
+                  strokeWidth: 2,
+                  strokeColor: Colors.white,
+                );
+              },
+            ),
+            belowBarData: BarAreaData(
+              show: true,
+              gradient: LinearGradient(
+                colors: [
+                  Colors.blue.shade100.withOpacity(0.3),
+                  Colors.blue.shade50.withOpacity(0.1),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+          // Add limit lines
+          LineChartBarData(
+            spots: [
+              FlSpot(0, data.maxWeightLimit),
+              FlSpot(5, data.maxWeightLimit),
+            ],
+            isCurved: false,
+            color: Colors.red.shade400,
+            barWidth: 2,
+            isStrokeCapRound: true,
+            dotData: const FlDotData(show: false),
+            dashArray: [5, 5],
+          ),
+          LineChartBarData(
+            spots: [
+              FlSpot(0, data.minWeightLimit),
+              FlSpot(5, data.minWeightLimit),
+            ],
+            isCurved: false,
+            color: Colors.orange.shade400,
+            barWidth: 2,
+            isStrokeCapRound: true,
+            dotData: const FlDotData(show: false),
+            dashArray: [5, 5],
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildStatCard(String title, String value, IconData icon, MaterialColor color, bool isOffline) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -463,46 +490,104 @@ class AnalyticsTab extends StatelessWidget {
                 size: 20,
               ),
               const SizedBox(width: 6),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade700,
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey.shade600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          Expanded(
-            child: Center(
-              child: Text(
-                value,
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold,
-                  color: isOffline ? Colors.grey.shade500 : color.shade700,
-                ),
-              ),
-            ),
-          ),
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: isOffline ? Colors.grey.shade100 : color.shade50,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                isOffline ? 'Unavailable' : subtitle,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isOffline ? Colors.grey.shade500 : color.shade700,
-                ),
-              ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isOffline ? Colors.grey.shade500 : color.shade700,
             ),
           ),
         ],
       ),
     );
+  }
+  
+  Widget _buildMetricItem(String title, String value, MaterialColor color, bool isOffline) {
+    return Column(
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey.shade600,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: isOffline ? Colors.grey.shade100 : color.shade50,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isOffline ? Colors.grey.shade300 : color.shade200,
+            ),
+          ),
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: isOffline ? Colors.grey.shade500 : color.shade700,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
+    );
+  }
+  
+  double _calculateAverage() {
+    if (data.weightHistory.isEmpty) return 0.0;
+    final sum = data.weightHistory.reduce((a, b) => a + b);
+    return sum / data.weightHistory.length;
+  }
+  
+  double _calculatePeak() {
+    if (data.weightHistory.isEmpty) return 0.0;
+    return data.weightHistory.reduce((a, b) => a > b ? a : b);
+  }
+  
+  double _calculateMin() {
+    if (data.weightHistory.isEmpty) return 0.0;
+    return data.weightHistory.reduce((a, b) => a < b ? a : b);
+  }
+  
+  double _calculateVariance() {
+    if (data.weightHistory.isEmpty) return 0.0;
+    final average = _calculateAverage();
+    final variance = data.weightHistory
+        .map((weight) => (weight - average) * (weight - average))
+        .reduce((a, b) => a + b) / data.weightHistory.length;
+    return (variance / average) * 100; // Return as percentage
+  }
+  
+  double _calculateLoadEfficiency() {
+    if (data.currentWeight == 0) return 0.0;
+    final optimalWeight = (data.minWeightLimit + data.maxWeightLimit) / 2;
+    final efficiency = (data.currentWeight / optimalWeight) * 100;
+    return efficiency.clamp(0.0, 100.0);
+  }
+  
+  String _calculateStability() {
+    final variance = _calculateVariance();
+    if (variance < 5) return 'Stable';
+    if (variance < 15) return 'Moderate';
+    return 'Unstable';
   }
 }

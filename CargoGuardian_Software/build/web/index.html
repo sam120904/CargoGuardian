@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
   <base href="/">
 
   <meta charset="UTF-8">
@@ -43,9 +56,9 @@
 
   <script>
     // The value below is injected by flutter build, do not touch.
-    const serviceWorkerVersion = "1220125881";
+    const serviceWorkerVersion = "4224440998";
     
-    // Enhanced global variables with iOS Safari detection
+    // Enhanced global variables with iOS Safari detection and null safety
     window.hasLocationPermission = false;
     window.googleMapsLoaded = false;
     window.mapInstances = {};
@@ -54,35 +67,34 @@
     window.isStandalone = false;
     window.flutterInitialized = false;
     
-    // Enhanced browser detection with iOS Safari specific handling
+    // Enhanced browser detection with iOS Safari specific handling and null safety
     (function() {
       try {
-        var userAgent = navigator.userAgent.toLowerCase();
-        var platform = navigator.platform ? navigator.platform.toLowerCase() : '';
+        var userAgent = (navigator.userAgent || '').toLowerCase();
+        var platform = (navigator.platform || '').toLowerCase();
         
         window.isMobileBrowser = /mobile|android|iphone|ipad/.test(userAgent);
         
-        // Enhanced iOS Safari detection
+        // Enhanced iOS Safari detection with null safety
         var isIOS = /iphone|ipad|ipod/.test(userAgent) || /iphone|ipad|ipod/.test(platform);
         var isSafari = /safari/.test(userAgent) && !/chrome|crios|fxios/.test(userAgent);
         window.isIOSSafari = isIOS && isSafari;
         
-        // Check for standalone mode using multiple methods
+        // Check for standalone mode using multiple methods with null safety
         window.isStandalone = false;
         try {
           // Method 1: Check navigator.standalone (iOS Safari specific)
-          if ('standalone' in navigator) {
+          if (navigator.standalone !== undefined && navigator.standalone !== null) {
             window.isStandalone = navigator.standalone === true;
           }
           
           // Method 2: Check display mode media query
           if (!window.isStandalone && window.matchMedia) {
-            window.isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-          }
-          
-          // Method 3: Check for PWA installation indicators
-          if (!window.isStandalone) {
-            window.isStandalone = window.navigator.standalone === true;
+            try {
+              window.isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            } catch (e) {
+              console.log("Media query check failed:", e);
+            }
           }
         } catch (e) {
           console.log("Error checking standalone mode:", e);
@@ -101,7 +113,7 @@
           
           // Disable zoom and unwanted touch behaviors on iOS Safari
           document.addEventListener('touchstart', function(e) {
-            if (e.touches.length > 1) {
+            if (e.touches && e.touches.length > 1) {
               e.preventDefault();
             }
           }, { passive: false });
@@ -117,7 +129,7 @@
           
           // Prevent pull-to-refresh on iOS Safari
           document.addEventListener('touchmove', function(e) {
-            if (e.scale !== 1) {
+            if (e.scale && e.scale !== 1) {
               e.preventDefault();
             }
           }, { passive: false });
@@ -138,7 +150,7 @@
       window.googleMapsLoaded = false;
     };
     
-    // iOS Safari safe location permission functions
+    // iOS Safari safe location permission functions with null safety
     window.getLocationPermission = function() {
       return window.hasLocationPermission || false;
     };
@@ -171,7 +183,7 @@
       }
     };
     
-    // Enhanced map initialization with better error handling
+    // Enhanced map initialization with better error handling and null safety
     window.initializeMap = function(elementId, lat, lng, title) {
       if (!window.googleMapsLoaded) {
         console.log("Google Maps not loaded yet, retrying...");
@@ -190,6 +202,12 @@
           return;
         }
         
+        // Check if google.maps is available
+        if (typeof google === 'undefined' || !google.maps) {
+          console.error("Google Maps API not available");
+          return;
+        }
+        
         var map = new google.maps.Map(mapContainer, {
           center: { lat: lat, lng: lng },
           zoom: 14,
@@ -203,7 +221,7 @@
         var marker = new google.maps.Marker({
           position: { lat: lat, lng: lng },
           map: map,
-          title: title
+          title: title || 'Location'
         });
         
         window.mapInstances[elementId] = {
@@ -217,7 +235,7 @@
       }
     };
 
-    // Enhanced URL opening with iOS Safari specific handling
+    // Enhanced URL opening with iOS Safari specific handling and null safety
     window.openExternalUrl = function(url) {
       console.log("openExternalUrl called with URL:", url);
       if (!url || typeof url !== 'string') {
@@ -233,79 +251,110 @@
             window.location.href = url;
           } else {
             // In browser mode, try to open in new tab
-            var newWindow = window.open(url, '_blank');
-            if (!newWindow) {
-              // Fallback if popup blocked
+            try {
+              var newWindow = window.open(url, '_blank');
+              if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+                // Fallback if popup blocked
+                window.location.href = url;
+              }
+            } catch (e) {
+              console.log("Popup blocked, using direct navigation:", e);
               window.location.href = url;
             }
           }
         } else {
-          var newWindow = window.open(url, '_blank', 'noopener,noreferrer');
-          if (newWindow) {
-            newWindow.focus();
-          } else {
+          try {
+            var newWindow = window.open(url, '_blank', 'noopener,noreferrer');
+            if (newWindow) {
+              newWindow.focus();
+            } else {
+              window.location.href = url;
+            }
+          } catch (e) {
+            console.log("Error opening new window:", e);
             window.location.href = url;
           }
         }
       } catch (e) {
         console.error("Error opening URL:", e);
-        window.location.href = url;
+        try {
+          window.location.href = url;
+        } catch (e2) {
+          console.error("Final fallback failed:", e2);
+        }
       }
     };
 
-    // iOS Safari specific initialization function
+    // iOS Safari specific initialization function with null safety
     window.initializeIOSSafari = function() {
       if (!window.isIOSSafari) return;
       
       console.log("Initializing iOS Safari specific features");
       
-      // Set viewport height for iOS Safari
+      // Set viewport height for iOS Safari with null safety
       function setViewportHeight() {
         try {
           var vh = window.innerHeight * 0.01;
-          document.documentElement.style.setProperty('--vh', vh + 'px');
-          console.log("Set viewport height to:", vh + 'px');
+          if (document.documentElement && document.documentElement.style) {
+            document.documentElement.style.setProperty('--vh', vh + 'px');
+            console.log("Set viewport height to:", vh + 'px');
+          }
         } catch (e) {
           console.error("Error setting viewport height:", e);
         }
       }
       
       setViewportHeight();
-      window.addEventListener('resize', setViewportHeight);
-      window.addEventListener('orientationchange', function() {
-        setTimeout(setViewportHeight, 500);
-      });
       
-      // Prevent rubber band scrolling
-      document.body.addEventListener('touchstart', function(e) {
-        if (e.target === document.body) {
-          e.preventDefault();
-        }
-      }, { passive: false });
+      // Add event listeners with null safety
+      if (window.addEventListener) {
+        window.addEventListener('resize', setViewportHeight);
+        window.addEventListener('orientationchange', function() {
+          setTimeout(setViewportHeight, 500);
+        });
+      }
       
-      document.body.addEventListener('touchend', function(e) {
-        if (e.target === document.body) {
-          e.preventDefault();
-        }
-      }, { passive: false });
-      
-      document.body.addEventListener('touchmove', function(e) {
-        if (e.target === document.body) {
-          e.preventDefault();
-        }
-      }, { passive: false });
+      // Prevent rubber band scrolling with null safety
+      if (document.body && document.body.addEventListener) {
+        document.body.addEventListener('touchstart', function(e) {
+          if (e.target === document.body) {
+            e.preventDefault();
+          }
+        }, { passive: false });
+        
+        document.body.addEventListener('touchend', function(e) {
+          if (e.target === document.body) {
+            e.preventDefault();
+          }
+        }, { passive: false });
+        
+        document.body.addEventListener('touchmove', function(e) {
+          if (e.target === document.body) {
+            e.preventDefault();
+          }
+        }, { passive: false });
+      }
     };
   </script>
 
   <!-- Load Google Maps API with enhanced error handling -->
   <script>
     (function() {
-      var script = document.createElement('script');
-      script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyDS3Qwxu0gTG5i0inF8V2-jdeFFhch9PSQ&callback=initGoogleMapsCallback&loading=async';
-      script.onerror = window.googleMapsError;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
+      try {
+        var script = document.createElement('script');
+        script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyDS3Qwxu0gTG5i0inF8V2-jdeFFhch9PSQ&callback=initGoogleMapsCallback&loading=async';
+        script.onerror = window.googleMapsError;
+        script.async = true;
+        script.defer = true;
+        if (document.head) {
+          document.head.appendChild(script);
+        }
+      } catch (e) {
+        console.error("Error loading Google Maps script:", e);
+        if (window.googleMapsError) {
+          window.googleMapsError();
+        }
+      }
     })();
   </script>
   
@@ -318,6 +367,7 @@
     .ios-safari {
       -webkit-overflow-scrolling: touch;
       -webkit-user-select: none;
+      user-select: none;
       -webkit-touch-callout: none;
       -webkit-tap-highlight-color: transparent;
     }
@@ -344,11 +394,13 @@
       font-size: 16px !important;
       transform: translateZ(0);
       -webkit-appearance: none;
+      appearance: none;
       border-radius: 0;
     }
   </style>
 </head>
 <body>
+  <!-- Loading Screen -->
   <div id="loading">
     <style>
       body {
@@ -441,6 +493,7 @@
         font-weight: 500;
         transition: background-color 0.2s;
         -webkit-appearance: none;
+        appearance: none;
       }
       
       .retry-button:hover {
@@ -461,8 +514,9 @@
     </div>
   </div>
 
+  <!-- Flutter initialization -->
   <script>
-    // Enhanced error handling and loading management
+    // Enhanced error handling and loading management with null safety
     var loadingSteps = [
       "Initializing application...",
       "Loading Flutter engine...",
@@ -481,206 +535,256 @@
     }
     
     function showError(message, showRetry) {
-      var loading = document.getElementById('loading');
-      var errorContainer = document.getElementById('error-container');
-      var errorMessage = document.getElementById('error-message');
-      var spinner = document.querySelector('.spinner');
-      var loadingText = document.querySelector('.loading-text');
-      var loadingSubtext = document.querySelector('.loading-subtext');
-      var retryButton = document.getElementById('retry-button');
-      
-      if (loadingInterval) {
-        clearInterval(loadingInterval);
+      try {
+        var loading = document.getElementById('loading');
+        var errorContainer = document.getElementById('error-container');
+        var errorMessage = document.getElementById('error-message');
+        var spinner = document.querySelector('.spinner');
+        var loadingText = document.querySelector('.loading-text');
+        var loadingSubtext = document.querySelector('.loading-subtext');
+        var retryButton = document.getElementById('retry-button');
+        
+        if (loadingInterval) {
+          clearInterval(loadingInterval);
+        }
+        
+        if (spinner) spinner.style.display = 'none';
+        if (loadingText) loadingText.style.display = 'none';
+        if (loadingSubtext) loadingSubtext.style.display = 'none';
+        if (errorMessage) errorMessage.textContent = message || 'Failed to initialize the application.';
+        if (errorContainer) errorContainer.style.display = 'block';
+        if (retryButton) retryButton.style.display = showRetry !== false ? 'block' : 'none';
+      } catch (e) {
+        console.error("Error showing error message:", e);
       }
-      
-      if (spinner) spinner.style.display = 'none';
-      if (loadingText) loadingText.style.display = 'none';
-      if (loadingSubtext) loadingSubtext.style.display = 'none';
-      if (errorMessage) errorMessage.textContent = message || 'Failed to initialize the application.';
-      if (errorContainer) errorContainer.style.display = 'block';
-      if (retryButton) retryButton.style.display = showRetry !== false ? 'block' : 'none';
     }
     
     function hideLoading() {
-      var loading = document.getElementById('loading');
-      if (loading) {
-        loading.style.transition = 'opacity 0.5s ease';
-        loading.style.opacity = '0';
-        setTimeout(function() {
-          if (loading && loading.parentNode) {
-            loading.parentNode.removeChild(loading);
-          }
-        }, 500);
-      }
-      if (loadingInterval) {
-        clearInterval(loadingInterval);
+      try {
+        var loading = document.getElementById('loading');
+        if (loading) {
+          loading.style.transition = 'opacity 0.5s ease';
+          loading.style.opacity = '0';
+          setTimeout(function() {
+            if (loading && loading.parentNode) {
+              loading.parentNode.removeChild(loading);
+            }
+          }, 500);
+        }
+        if (loadingInterval) {
+          clearInterval(loadingInterval);
+        }
+      } catch (e) {
+        console.error("Error hiding loading screen:", e);
       }
     }
     
-    // Enhanced Flutter initialization with iOS Safari specific handling
+    // Enhanced Flutter initialization with new API and iOS Safari specific handling
     window.addEventListener('load', function() {
       console.log("Page loaded, starting initialization");
       
-      // Initialize iOS Safari specific features
-      window.initializeIOSSafari();
-      
-      // Start loading text animation
-      loadingInterval = setInterval(updateLoadingText, 1500);
-      
-      // Set up retry button
-      var retryButton = document.getElementById('retry-button');
-      if (retryButton) {
-        retryButton.addEventListener('click', function() {
-          window.location.reload();
-        });
-      }
-      
-      // Request location permission after a delay
-      setTimeout(function() {
-        if (typeof window.requestLocationPermission === 'function') {
-          window.requestLocationPermission();
-        }
-      }, 3000);
-      
-      // Load flutter.js with enhanced error handling
-      var scriptTag = document.createElement('script');
-      scriptTag.src = 'flutter.js';
-      scriptTag.type = 'application/javascript';
-      
-      var scriptLoadTimeout = setTimeout(function() {
-        console.error("flutter.js load timeout");
-        showError("Failed to load application resources. Please check your internet connection and try again.");
-      }, 20000); // Increased timeout for iOS Safari
-      
-      scriptTag.onload = function() {
-        clearTimeout(scriptLoadTimeout);
-        console.log("flutter.js loaded successfully");
-        initFlutterApp();
-      };
-      
-      scriptTag.onerror = function() {
-        clearTimeout(scriptLoadTimeout);
-        console.error("Failed to load flutter.js");
-        showError("Failed to load application resources. Please check your internet connection and try again.");
-      };
-      
-      document.body.appendChild(scriptTag);
-      
-      // Enhanced Flutter app initialization
-      function initFlutterApp() {
-        if (typeof _flutter === 'undefined') {
-          console.log("Waiting for flutter.js to load...");
-          setTimeout(initFlutterApp, 200);
-          return;
+      try {
+        // Initialize iOS Safari specific features
+        if (window.initializeIOSSafari) {
+          window.initializeIOSSafari();
         }
         
-        // Enhanced delay calculation for different platforms
-        var initDelay = 500; // Default delay
-        if (window.isIOSSafari) {
-          initDelay = window.isStandalone ? 4000 : 5000; // Longer delay for iOS Safari
-        } else if (window.isMobileBrowser) {
-          initDelay = 2000; // Medium delay for other mobile browsers
+        // Start loading text animation
+        loadingInterval = setInterval(updateLoadingText, 1500);
+        
+        // Set up retry button with null safety
+        var retryButton = document.getElementById('retry-button');
+        if (retryButton) {
+          retryButton.addEventListener('click', function() {
+            try {
+              window.location.reload();
+            } catch (e) {
+              console.error("Error reloading page:", e);
+            }
+          });
         }
         
-        console.log("Using initialization delay of " + initDelay + "ms for platform:", {
-          isIOSSafari: window.isIOSSafari,
-          isMobile: window.isMobileBrowser,
-          isStandalone: window.isStandalone
-        });
-        
+        // Request location permission after a delay
         setTimeout(function() {
           try {
-            updateLoadingText();
-            
-            // Enhanced Flutter initialization with better error handling
-            _flutter.loader.loadEntrypoint({
-              serviceWorker: {
-                serviceWorkerVersion: serviceWorkerVersion,
-              },
-              onEntrypointLoaded: async function(engineInitializer) {
-                try {
-                  console.log("Flutter entrypoint loaded, initializing engine...");
-                  updateLoadingText();
-                  
-                  // Enhanced renderer selection with iOS Safari optimization
-                  var renderer = "html"; // Default to HTML renderer for better iOS Safari compatibility
-                  if (!window.isMobileBrowser && !window.isIOSSafari) {
-                    renderer = "canvaskit"; // Use CanvasKit only for desktop non-Safari
-                  }
-                  
-                  console.log("Using renderer:", renderer, "for platform:", {
-                    isIOSSafari: window.isIOSSafari,
-                    isMobile: window.isMobileBrowser
-                  });
-                  
-                  var engineConfig = {
-                    renderer: renderer,
-                    useColorEmoji: true
-                  };
-                  
-                  // iOS Safari specific engine configuration
-                  if (window.isIOSSafari) {
-                    engineConfig.canvasKitBaseUrl = null; // Disable CanvasKit for iOS Safari
-                    engineConfig.debugShowSemanticsNodes = false;
-                  }
-                  
-                  const appRunner = await engineInitializer.initializeEngine(engineConfig);
-                  
-                  console.log("Flutter engine initialized, running app...");
-                  updateLoadingText();
-                  
-                  await appRunner.runApp();
-                  
-                  console.log("Flutter app started successfully");
-                  window.flutterInitialized = true;
-                  
-                  // Hide loading screen after successful initialization
-                  setTimeout(hideLoading, 1500); // Longer delay for iOS Safari
-                  
-                } catch (e) {
-                  console.error('Flutter initialization error:', e);
-                  showError('Failed to initialize Flutter application: ' + e.message);
-                }
-              }
-            }).catch(function(err) {
-              console.error('Flutter loader error:', err);
-              showError('Failed to load application: ' + err.message);
-            });
+            if (typeof window.requestLocationPermission === 'function') {
+              window.requestLocationPermission();
+            }
           } catch (e) {
-            console.error("Error during Flutter initialization:", e);
-            showError("Failed to initialize the application: " + e.message);
+            console.error("Error requesting location permission:", e);
           }
-        }, initDelay);
-      }
-      
-      // Fallback timeout for the entire initialization process
-      setTimeout(function() {
-        if (!window.flutterInitialized) {
-          console.error("Flutter initialization timeout");
-          showError("Application is taking longer than expected to load. This might be due to slow network or browser compatibility issues.", true);
+        }, 3000);
+        
+        // Load flutter.js with enhanced error handling
+        var scriptTag = document.createElement('script');
+        scriptTag.src = 'flutter.js';
+        scriptTag.type = 'application/javascript';
+        
+        var scriptLoadTimeout = setTimeout(function() {
+          console.error("flutter.js load timeout");
+          showError("Failed to load application resources. Please check your internet connection and try again.");
+        }, 20000); // Increased timeout for iOS Safari
+        
+        scriptTag.onload = function() {
+          try {
+            clearTimeout(scriptLoadTimeout);
+            console.log("flutter.js loaded successfully");
+            initFlutterApp();
+          } catch (e) {
+            console.error("Error in flutter.js onload:", e);
+            showError("Error initializing Flutter: " + e.message);
+          }
+        };
+        
+        scriptTag.onerror = function() {
+          clearTimeout(scriptLoadTimeout);
+          console.error("Failed to load flutter.js");
+          showError("Failed to load application resources. Please check your internet connection and try again.");
+        };
+        
+        if (document.body) {
+          document.body.appendChild(scriptTag);
         }
-      }, 45000); // 45 second timeout for iOS Safari
-    });
-    
-    // Handle page visibility changes (iOS Safari specific)
-    document.addEventListener('visibilitychange', function() {
-      if (document.visibilityState === 'visible' && window.isIOSSafari) {
-        console.log("Page became visible on iOS Safari");
-        // Refresh viewport height on iOS Safari when page becomes visible
-        var vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', vh + 'px');
-      }
-    });
-    
-    // Handle orientation changes (iOS Safari specific)
-    window.addEventListener('orientationchange', function() {
-      if (window.isIOSSafari) {
+        
+        // Enhanced Flutter app initialization with new API and null safety
+        function initFlutterApp() {
+          if (typeof _flutter === 'undefined') {
+            console.log("Waiting for flutter.js to load...");
+            setTimeout(initFlutterApp, 200);
+            return;
+          }
+          
+          // Enhanced delay calculation for different platforms
+          var initDelay = 500; // Default delay
+          if (window.isIOSSafari) {
+            initDelay = window.isStandalone ? 4000 : 5000; // Longer delay for iOS Safari
+          } else if (window.isMobileBrowser) {
+            initDelay = 2000; // Medium delay for other mobile browsers
+          }
+          
+          console.log("Using initialization delay of " + initDelay + "ms for platform:", {
+            isIOSSafari: window.isIOSSafari,
+            isMobile: window.isMobileBrowser,
+            isStandalone: window.isStandalone
+          });
+          
+          setTimeout(function() {
+            try {
+              updateLoadingText();
+              
+              // Use the new Flutter web initialization API
+              _flutter.loader.loadEntrypoint({
+                serviceWorker: {
+                  serviceWorkerVersion: serviceWorkerVersion,
+                },
+                onEntrypointLoaded: async function(engineInitializer) {
+                  try {
+                    console.log("Flutter entrypoint loaded, initializing engine...");
+                    updateLoadingText();
+                    
+                    // Enhanced renderer selection with iOS Safari optimization
+                    var renderer = "html"; // Default to HTML renderer for better iOS Safari compatibility
+                    if (!window.isMobileBrowser && !window.isIOSSafari) {
+                      renderer = "canvaskit"; // Use CanvasKit only for desktop non-Safari
+                    }
+                    
+                    console.log("Using renderer:", renderer, "for platform:", {
+                      isIOSSafari: window.isIOSSafari,
+                      isMobile: window.isMobileBrowser
+                    });
+                    
+                    var engineConfig = {
+                      renderer: renderer,
+                      useColorEmoji: true
+                    };
+                    
+                    // iOS Safari specific engine configuration
+                    if (window.isIOSSafari) {
+                      engineConfig.canvasKitBaseUrl = null; // Disable CanvasKit for iOS Safari
+                      engineConfig.debugShowSemanticsNodes = false;
+                    }
+                    
+                    const appRunner = await engineInitializer.initializeEngine(engineConfig);
+                    
+                    console.log("Flutter engine initialized, running app...");
+                    updateLoadingText();
+                    
+                    await appRunner.runApp();
+                    
+                    console.log("Flutter app started successfully");
+                    window.flutterInitialized = true;
+                    
+                    // Hide loading screen after successful initialization
+                    setTimeout(hideLoading, 1500); // Longer delay for iOS Safari
+                    
+                  } catch (e) {
+                    console.error('Flutter initialization error:', e);
+                    showError('Failed to initialize Flutter application: ' + e.message);
+                  }
+                }
+              }).catch(function(err) {
+                console.error('Flutter loader error:', err);
+                showError('Failed to load application: ' + err.message);
+              });
+            } catch (e) {
+              console.error("Error during Flutter initialization:", e);
+              showError("Failed to initialize the application: " + e.message);
+            }
+          }, initDelay);
+        }
+        
+        // Fallback timeout for the entire initialization process
         setTimeout(function() {
-          var vh = window.innerHeight * 0.01;
-          document.documentElement.style.setProperty('--vh', vh + 'px');
-        }, 500);
+          if (!window.flutterInitialized) {
+            console.error("Flutter initialization timeout");
+            showError("Application is taking longer than expected to load. This might be due to slow network or browser compatibility issues.", true);
+          }
+        }, 45000); // 45 second timeout for iOS Safari
+        
+      } catch (e) {
+        console.error("Error in window load handler:", e);
+        showError("Failed to initialize application: " + e.message);
       }
     });
+    
+    // Handle page visibility changes (iOS Safari specific) with null safety
+    if (document.addEventListener) {
+      document.addEventListener('visibilitychange', function() {
+        try {
+          if (document.visibilityState === 'visible' && window.isIOSSafari) {
+            console.log("Page became visible on iOS Safari");
+            // Refresh viewport height on iOS Safari when page becomes visible
+            var vh = window.innerHeight * 0.01;
+            if (document.documentElement && document.documentElement.style) {
+              document.documentElement.style.setProperty('--vh', vh + 'px');
+            }
+          }
+        } catch (e) {
+          console.error("Error handling visibility change:", e);
+        }
+      });
+    }
+    
+    // Handle orientation changes (iOS Safari specific) with null safety
+    if (window.addEventListener) {
+      window.addEventListener('orientationchange', function() {
+        try {
+          if (window.isIOSSafari) {
+            setTimeout(function() {
+              var vh = window.innerHeight * 0.01;
+              if (document.documentElement && document.documentElement.style) {
+                document.documentElement.style.setProperty('--vh', vh + 'px');
+              }
+            }, 500);
+          }
+        } catch (e) {
+          console.error("Error handling orientation change:", e);
+        }
+      });
+    }
   </script>
+  
+  <!-- Flutter Web Engine -->
+  <script src="flutter.js" defer></script>
 </body>
 </html>

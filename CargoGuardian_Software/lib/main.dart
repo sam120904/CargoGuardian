@@ -1,75 +1,23 @@
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
-import 'dart:js' as js;
+// Use conditional imports to fix APK build issues
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:async';
-import 'package:flutter/foundation.dart';
+
+// Import platform-specific code conditionally
+import 'platform/platform_imports.dart';
 
 import 'firebase_options.dart';
 import 'config/config.dart';
-
 import 'auth/login_page.dart';
 import 'auth/signup_page.dart';
-
 import 'dashboard/dashboard_page.dart';
 
-// Enhanced platform detection
+// Platform detection variables
 bool _isMobileBrowser = false;
 bool _isIOSSafari = false;
 bool _isStandalone = false;
-
-// Helper function to safely check for standalone mode
-bool _checkStandaloneMode() {
-  if (!kIsWeb) return false;
-  
-  try {
-    // Use JavaScript interop to safely check for standalone mode
-    if (js.context.hasProperty('navigator')) {
-      final navigator = js.context['navigator'];
-      if (navigator != null && navigator.hasProperty('standalone')) {
-        return navigator['standalone'] == true;
-      }
-    }
-    
-    // Alternative method using media query
-    final mediaQuery = html.window.matchMedia('(display-mode: standalone)');
-    return mediaQuery.matches;
-  } catch (e) {
-    print("Error checking standalone mode: $e");
-    return false;
-  }
-}
-
-// Helper function to detect iOS Safari
-bool _detectIOSSafari() {
-  if (!kIsWeb) return false;
-  
-  try {
-    final userAgent = html.window.navigator.userAgent.toLowerCase();
-    final platform = html.window.navigator.platform?.toLowerCase() ?? '';
-    
-    // Check for iOS devices
-    final isIOS = userAgent.contains('iphone') ||
-        userAgent.contains('ipad') ||
-        userAgent.contains('ipod') ||
-        platform.contains('iphone') ||
-        platform.contains('ipad') ||
-        platform.contains('ipod');
-    
-    // Check for Safari browser (not Chrome or other browsers on iOS)
-    final isSafari = userAgent.contains('safari') && 
-        !userAgent.contains('chrome') && 
-        !userAgent.contains('crios') &&
-        !userAgent.contains('fxios');
-    
-    return isIOS && isSafari;
-  } catch (e) {
-    print("Error detecting iOS Safari: $e");
-    return false;
-  }
-}
 
 void main() async {
   // Enhanced error handling with zone
@@ -78,24 +26,20 @@ void main() async {
       // Ensure Flutter is initialized
       WidgetsFlutterBinding.ensureInitialized();
 
-      // Enhanced platform detection for web
+      // Enhanced platform detection for web with null safety
       if (kIsWeb) {
         try {
-          final userAgent = html.window.navigator.userAgent.toLowerCase();
-          
-          _isMobileBrowser = userAgent.contains('mobile') ||
-              userAgent.contains('android') ||
-              userAgent.contains('iphone') ||
-              userAgent.contains('ipad');
-
-          _isIOSSafari = _detectIOSSafari();
-          _isStandalone = _checkStandaloneMode();
+          // Use platform-specific code through the platform_imports.dart
+          final platformInfo = await PlatformUtils.detectPlatform();
+          _isMobileBrowser = platformInfo.isMobileBrowser;
+          _isIOSSafari = platformInfo.isIOSSafari;
+          _isStandalone = platformInfo.isStandalone;
 
           print("Enhanced platform detection: "
               "Mobile: $_isMobileBrowser, "
               "iOS Safari: $_isIOSSafari, "
               "Standalone: $_isStandalone, "
-              "UserAgent: $userAgent");
+              "UserAgent: ${platformInfo.userAgent}");
 
           // Enhanced delay for iOS Safari
           if (_isIOSSafari) {
@@ -118,7 +62,7 @@ void main() async {
         print("Error initializing AppConfig: $e");
       }
 
-      // Enhanced Firebase initialization
+      // Enhanced Firebase initialization with null safety
       if (Firebase.apps.isEmpty) {
         try {
           await Firebase.initializeApp(
@@ -127,7 +71,7 @@ void main() async {
           print("Firebase initialized successfully");
           
           // Additional delay after Firebase initialization for iOS Safari
-          if (_isIOSSafari) {
+          if (kIsWeb && _isIOSSafari) {
             await Future.delayed(const Duration(milliseconds: 1000));
           }
         } catch (e) {
@@ -153,35 +97,37 @@ void main() async {
       try {
         runApp(MaterialApp(
           home: Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Application Error',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      'Error: ${error.toString()}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 14),
+            body: SafeArea(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error, size: 64, color: Colors.red),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Application Error',
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (kIsWeb) {
-                        html.window.location.reload();
-                      }
-                    },
-                    child: const Text('Reload App'),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        'Error: ${error.toString()}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (kIsWeb) {
+                          PlatformUtils.reloadPage();
+                        }
+                      },
+                      child: const Text('Reload App'),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -234,24 +180,13 @@ class _MyAppState extends State<MyApp> {
       await Future.delayed(Duration(milliseconds: delay));
 
       // Additional iOS Safari specific initialization
-      if (_isIOSSafari && kIsWeb) {
+      if (kIsWeb && _isIOSSafari) {
         try {
-          // Set viewport height for iOS Safari using JavaScript interop
-          _setIOSViewportHeight();
+          // Set viewport height for iOS Safari using platform utils
+          PlatformUtils.setIOSViewportHeight();
           
-          // Handle orientation changes
-          html.window.addEventListener('orientationchange', (event) {
-            Timer(const Duration(milliseconds: 500), () {
-              _setIOSViewportHeight();
-            });
-          });
-          
-          // Handle resize events
-          html.window.addEventListener('resize', (event) {
-            Timer(const Duration(milliseconds: 100), () {
-              _setIOSViewportHeight();
-            });
-          });
+          // Handle orientation changes and resize events
+          PlatformUtils.setupIOSSafariEvents();
         } catch (e) {
           print("Error setting up iOS Safari specific features: $e");
         }
@@ -271,15 +206,6 @@ class _MyAppState extends State<MyApp> {
           _isInitialized = true;
         });
       }
-    }
-  }
-
-  void _setIOSViewportHeight() {
-    try {
-      final vh = html.window.innerHeight! * 0.01;
-      html.document.documentElement?.style.setProperty('--vh', '${vh}px');
-    } catch (e) {
-      print("Error setting viewport height: $e");
     }
   }
 
@@ -567,7 +493,7 @@ class EnhancedInitErrorScreen extends StatelessWidget {
                       ElevatedButton(
                         onPressed: () {
                           if (kIsWeb) {
-                            html.window.location.reload();
+                            PlatformUtils.reloadPage();
                           } else {
                             Navigator.pushReplacement(
                               context,

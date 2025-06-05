@@ -108,7 +108,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   String _selectedTrain = 'Train A-123';
   final List<String> _trainOptions = ['Train A-123', 'Train B-456', 'Train C-789', 'Train D-012'];
   
-  // Weight data
+  // Weight data - FIXED: Initialize with null/checking state
   double _currentWeight = 0.0;
   double _minWeightLimit = 20.0;
   double _maxWeightLimit = 50.0;
@@ -117,9 +117,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   bool _isClearanceGiven = false;
   bool _sendAlertEnabled = false;
   
-  // Data loading states
-  bool _isLoadingWeight = true;
-  bool _isLoadingHistory = true;
+  // Data loading states - FIXED: Start with checking state
+  bool _isLoadingWeight = false; // Changed from true to false
+  bool _isLoadingHistory = false; // Changed from true to false
   
   // Timer for periodic updates
   Timer? _updateTimer;
@@ -149,7 +149,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   // Flag to prevent alert on initial load
   bool _isInitialLoad = true;
   
-  // Connection status
+  // Connection status - FIXED: Start with checking state
   ConnectionStatus _connectionStatus = ConnectionStatus.checking;
   bool _isBlinking = false;
   String _errorMessage = '';
@@ -183,16 +183,18 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     // Check location permission
     _checkLocationPermission();
     
-    // Set initial connection status to checking
+    // FIXED: Set initial state properly
     setState(() {
       _connectionStatus = ConnectionStatus.checking;
-      _currentWeight = 0.0; // Start with zero weight until connected
+      _currentWeight = 0.0; // Start with zero weight
+      _isLoadingWeight = false; // Don't show loading initially
+      _isLoadingHistory = false; // Don't show loading initially
     });
     
     // Start connection status blinking
     _startConnectionBlinking();
     
-    // Check connection status first, then fetch data
+    // FIXED: Check connection status first, then fetch data
     _checkConnectionStatus().then((_) {
       if (_connectionStatus == ConnectionStatus.connected) {
         _fetchInitialData();
@@ -263,7 +265,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     }
   }
   
-  // Fetch initial data from Blynk
+  // FIXED: Fetch initial data from Blynk with proper state management
   Future<void> _fetchInitialData() async {
     if (_isRefreshingConnection) return;
     
@@ -367,7 +369,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     });
   }
   
-  // Check connection status with rapid checks
+  // FIXED: Check connection status with proper state management
   Future<void> _checkConnectionStatus() async {
     if (_isRefreshingConnection) return;
     
