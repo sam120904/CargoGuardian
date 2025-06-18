@@ -25,37 +25,15 @@ class PlatformInfo {
 class PlatformImplementation {
   static void openUrlInBrowser(String url) {
     try {
-      // Safe user agent check with null safety
-      final userAgent = html.window.navigator.userAgent.toLowerCase();
-      final isIOSSafari = userAgent.contains('iphone') || 
-                          userAgent.contains('ipad') || 
-                          userAgent.contains('ipod');
-      
-      if (isIOSSafari) {
-        // For iOS Safari, use a direct approach
-        html.window.location.href = url;
-      } else {
-        // Use the custom JavaScript function defined in index.html
-        if (js.context.hasProperty('openExternalUrl')) {
-          js.context.callMethod('openExternalUrl', [url]);
-        } else {
-          // Fallback if function doesn't exist
-          html.window.open(url, '_blank');
-        }
-      }
+      // FIXED: Always open in new tab without affecting current page
+      html.window.open(url, '_blank', 'noopener,noreferrer');
     } catch (e) {
       print("Error opening URL: $e");
-      // Fallback to standard window.open
+      // Fallback - but still try to open in new tab
       try {
         html.window.open(url, '_blank');
       } catch (e2) {
         print("Fallback error opening URL: $e2");
-        // Last resort - direct navigation
-        try {
-          html.window.location.href = url;
-        } catch (e3) {
-          print("Final fallback error: $e3");
-        }
       }
     }
   }
@@ -256,12 +234,12 @@ class PlatformImplementation {
     }
   }
 
-  // NEW: Register actual tile-based map view
+  // FIXED: Full coverage map with proper click handling
   static void registerMapView(String viewType, double lat, double lng, VoidCallback onMapClick) {
     try {
-      // Register a real tile-based map view
+      // Register a full-coverage tile-based map view
       ui_web.platformViewRegistry.registerViewFactory(viewType, (int viewId) {
-        // Create main map container
+        // Create main map container that fills the entire space
         final mapContainer = html.DivElement()
           ..style.width = '100%'
           ..style.height = '100%'
@@ -269,15 +247,18 @@ class PlatformImplementation {
           ..style.overflow = 'hidden'
           ..style.backgroundColor = '#f0f8ff';
 
-        // Create the actual map using Leaflet-style tile approach
+        // Create the actual map div that fills the container
         final mapDiv = html.DivElement()
           ..id = 'map-$viewId'
           ..style.width = '100%'
           ..style.height = '100%'
-          ..style.position = 'relative'
-          ..style.cursor = 'pointer';
+          ..style.position = 'absolute'
+          ..style.top = '0'
+          ..style.left = '0'
+          ..style.cursor = 'pointer'
+          ..style.overflow = 'hidden';
 
-        // Add the map initialization script
+        // Add the map initialization script with full coverage
         final script = html.ScriptElement()
           ..text = '''
             (function() {
@@ -300,27 +281,30 @@ class PlatformImplementation {
               
               const [centerX, centerY] = deg2num(lat, lng, zoom);
               
-              // Create a 3x3 grid of tiles centered on our location
+              // FIXED: Create larger grid to ensure full coverage
               const tileSize = 256;
-              const gridSize = 3;
-              const startX = centerX - Math.floor(gridSize / 2);
-              const startY = centerY - Math.floor(gridSize / 2);
+              const gridSizeX = 6; // Increased from 3 to 6
+              const gridSizeY = 4; // Increased from 3 to 4
+              const startX = centerX - Math.floor(gridSizeX / 2);
+              const startY = centerY - Math.floor(gridSizeY / 2);
               
               // Clear any existing content
               mapDiv.innerHTML = '';
               
-              // Create tiles container
+              // FIXED: Create tiles container that fills the entire space
               const tilesContainer = document.createElement('div');
-              tilesContainer.style.position = 'relative';
-              tilesContainer.style.width = (gridSize * tileSize) + 'px';
-              tilesContainer.style.height = (gridSize * tileSize) + 'px';
+              tilesContainer.style.position = 'absolute';
+              tilesContainer.style.width = (gridSizeX * tileSize) + 'px';
+              tilesContainer.style.height = (gridSizeY * tileSize) + 'px';
               tilesContainer.style.left = '50%';
               tilesContainer.style.top = '50%';
               tilesContainer.style.transform = 'translate(-50%, -50%)';
+              tilesContainer.style.minWidth = '100%';
+              tilesContainer.style.minHeight = '100%';
               
-              // Add tiles
-              for (let i = 0; i < gridSize; i++) {
-                for (let j = 0; j < gridSize; j++) {
+              // Add tiles to cover the entire area
+              for (let i = 0; i < gridSizeX; i++) {
+                for (let j = 0; j < gridSizeY; j++) {
                   const tileX = startX + i;
                   const tileY = startY + j;
                   
@@ -333,9 +317,11 @@ class PlatformImplementation {
                   tile.style.height = tileSize + 'px';
                   tile.style.border = 'none';
                   tile.style.display = 'block';
+                  tile.style.userSelect = 'none';
+                  tile.style.pointerEvents = 'none'; // Prevent individual tile clicks
                   
                   // Add loading placeholder
-                  tile.style.backgroundColor = '#e0e0e0';
+                  tile.style.backgroundColor = '#e8f4f8';
                   
                   // Handle tile load errors
                   tile.onerror = function() {
@@ -343,41 +329,44 @@ class PlatformImplementation {
                     this.style.display = 'flex';
                     this.style.alignItems = 'center';
                     this.style.justifyContent = 'center';
-                    this.innerHTML = '<div style="color: #666; font-size: 12px;">Map tile unavailable</div>';
+                    this.innerHTML = '<div style="color: #666; font-size: 10px; text-align: center;">Tile<br>Loading...</div>';
                   };
                   
                   tilesContainer.appendChild(tile);
                 }
               }
               
-              // Add location marker
+              // Add location marker (centered)
               const marker = document.createElement('div');
               marker.innerHTML = '📍';
               marker.style.position = 'absolute';
               marker.style.left = '50%';
               marker.style.top = '50%';
               marker.style.transform = 'translate(-50%, -50%)';
-              marker.style.fontSize = '24px';
+              marker.style.fontSize = '28px';
               marker.style.zIndex = '1000';
-              marker.style.filter = 'drop-shadow(2px 2px 4px rgba(0,0,0,0.5))';
+              marker.style.filter = 'drop-shadow(2px 2px 4px rgba(0,0,0,0.7))';
+              marker.style.pointerEvents = 'none'; // Don't interfere with clicks
               
               // Add location info overlay
               const infoOverlay = document.createElement('div');
               infoOverlay.innerHTML = `
                 <div style="
                   position: absolute;
-                  top: 10px;
-                  left: 10px;
-                  background: rgba(255, 255, 255, 0.9);
-                  padding: 8px 12px;
-                  border-radius: 6px;
-                  font-size: 12px;
+                  top: 12px;
+                  left: 12px;
+                  background: rgba(255, 255, 255, 0.95);
+                  padding: 10px 14px;
+                  border-radius: 8px;
+                  font-size: 13px;
                   font-family: Arial, sans-serif;
-                  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                  box-shadow: 0 3px 6px rgba(0,0,0,0.2);
                   z-index: 1001;
+                  border: 1px solid rgba(0,0,0,0.1);
+                  pointer-events: none;
                 ">
-                  <strong>Delhi Central Station</strong><br>
-                  📍 \${lat.toFixed(4)}, \${lng.toFixed(4)}
+                  <strong style="color: #2c3e50;">Delhi Central Station</strong><br>
+                  <span style="color: #7f8c8d;">📍 \${lat.toFixed(4)}, \${lng.toFixed(4)}</span>
                 </div>
               `;
               
@@ -386,15 +375,17 @@ class PlatformImplementation {
               clickOverlay.innerHTML = `
                 <div style="
                   position: absolute;
-                  bottom: 10px;
-                  right: 10px;
-                  background: rgba(0, 0, 0, 0.7);
+                  bottom: 12px;
+                  right: 12px;
+                  background: rgba(0, 0, 0, 0.8);
                   color: white;
-                  padding: 6px 10px;
-                  border-radius: 4px;
-                  font-size: 11px;
+                  padding: 8px 12px;
+                  border-radius: 6px;
+                  font-size: 12px;
                   font-family: Arial, sans-serif;
                   z-index: 1001;
+                  border: 1px solid rgba(255,255,255,0.2);
+                  pointer-events: none;
                 ">
                   🖱️ Click to open in Google Maps
                 </div>
@@ -406,14 +397,20 @@ class PlatformImplementation {
               mapDiv.appendChild(infoOverlay);
               mapDiv.appendChild(clickOverlay);
               
-              // Add click handler to the entire map
+              // FIXED: Add click handler that prevents navigation
               mapDiv.addEventListener('click', function(e) {
+                e.preventDefault(); // Prevent default navigation
+                e.stopPropagation(); // Stop event bubbling
+                
                 // Add click animation
                 mapDiv.style.transform = 'scale(0.98)';
                 mapDiv.style.transition = 'transform 0.1s ease';
                 setTimeout(function() {
                   mapDiv.style.transform = 'scale(1.0)';
                 }, 100);
+                
+                // Don't navigate - let Flutter handle the callback
+                return false;
               });
               
               // Add hover effect
@@ -429,9 +426,11 @@ class PlatformImplementation {
             })();
           ''';
 
-        // Add click handler
+        // FIXED: Add click handler that only opens new tab
         mapDiv.onClick.listen((event) {
-          onMapClick();
+          event.preventDefault();
+          event.stopPropagation();
+          onMapClick(); // This will call the Flutter callback which opens new tab
         });
 
         // Assemble the container
