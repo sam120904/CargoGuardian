@@ -35,6 +35,16 @@ class PlatformImplementation {
   static bool isIOSSafari() {
     return false;
   }
+
+  // NEW: Console command checking - stub implementation
+  static void checkConsoleCommands(Function(String) onCommand) {
+    // Stub implementation
+  }
+
+  // NEW: Set up console command listener - stub implementation
+  static void setupConsoleListener() {
+    // Stub implementation
+  }
 }
 
 class PlatformInfo {

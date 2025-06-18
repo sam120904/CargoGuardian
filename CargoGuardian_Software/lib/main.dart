@@ -13,6 +13,7 @@ import 'config/config.dart';
 import 'auth/login_page.dart';
 import 'auth/signup_page.dart';
 import 'dashboard/dashboard_page.dart';
+import 'services/testing_service.dart';
 
 // Platform detection variables
 bool _isMobileBrowser = false;
@@ -60,6 +61,13 @@ void main() async {
         AppConfig.debugPrintConfig();
       } catch (e) {
         print("Error initializing AppConfig: $e");
+      }
+
+      // Initialize Testing Service
+      try {
+        TestingService().initialize();
+      } catch (e) {
+        print("Error initializing TestingService: $e");
       }
 
       // Enhanced Firebase initialization with null safety
@@ -160,6 +168,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void dispose() {
     _initTimer?.cancel();
+    TestingService().dispose();
     super.dispose();
   }
 
@@ -286,6 +295,7 @@ class _EnhancedAppLoadingScreenState extends State<EnhancedAppLoadingScreen>
     "Initializing CargoGuardian...",
     "Loading security protocols...",
     "Connecting to IoT sensors...",
+    "Setting up testing environment...",
     "Preparing dashboard...",
     "Almost ready..."
   ];
@@ -402,6 +412,45 @@ class _EnhancedAppLoadingScreenState extends State<EnhancedAppLoadingScreen>
                       "Optimizing for iOS Safari...",
                       style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                       textAlign: TextAlign.center,
+                    ),
+                  ],
+                  if (kIsWeb) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.symmetric(horizontal: 32),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.shade200),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.science,
+                            color: Colors.blue.shade700,
+                            size: 20,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "Testing Mode Available",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue.shade700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Open browser console and type TEST_ON() or TEST_OFF()",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue.shade600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ],

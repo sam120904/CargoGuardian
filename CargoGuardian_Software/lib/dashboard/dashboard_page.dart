@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'dart:async';
 import '../services/auth_service.dart';
 import '../services/blynk_service.dart';
+import '../services/testing_service.dart';
 import '../config/config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -40,6 +41,7 @@ class DashboardData {
   final ConnectionStatus connectionStatus;
   final bool isBlinking;
   final String errorMessage;
+  final bool isTestMode;
 
   DashboardData({
     required this.selectedTrain,
@@ -63,6 +65,7 @@ class DashboardData {
     required this.connectionStatus,
     required this.isBlinking,
     required this.errorMessage,
+    required this.isTestMode,
   });
 }
 
@@ -99,6 +102,7 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> with SingleTickerProviderStateMixin {
   final _authService = AuthService();
   final _blynkService = BlynkService();
+  final _testingService = TestingService();
   
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -183,6 +187,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     // Check location permission
     _checkLocationPermission();
     
+    // Listen for test mode changes
+    _testingService.addTestModeChangeCallback(_onTestModeChanged);
+    
     // FIXED: Set initial state properly
     setState(() {
       _connectionStatus = ConnectionStatus.checking;
@@ -195,6 +202,15 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     _startConnectionBlinking();
     
     // FIXED: Check connection status first, then fetch data
+    _checkConnectionStatus().then((_) {
+      if (_connectionStatus == ConnectionStatus.connected) {
+        _fetchInitialData();
+      }
+    });
+  }
+  
+  void _onTestModeChanged() {
+    // Refresh data when test mode changes
     _checkConnectionStatus().then((_) {
       if (_connectionStatus == ConnectionStatus.connected) {
         _fetchInitialData();
@@ -397,7 +413,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           _startPeriodicUpdates();
         } else {
           _connectionStatus = ConnectionStatus.disconnected;
-          _errorMessage = 'IoT device is offline';
+          _errorMessage = _testingService.isTestMode 
+            ? 'Simulated device offline' 
+            : 'IoT device is offline';
           _currentWeight = 0.0;
           _checkWeightStatus();
         }
@@ -496,11 +514,17 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     
     // Show appropriate message
     if (mounted) {
+      final message = _testingService.isTestMode
+        ? (_connectionStatus == ConnectionStatus.connected 
+          ? 'Simulated data refreshed' 
+          : 'Failed to connect to simulated device')
+        : (_connectionStatus == ConnectionStatus.connected 
+          ? 'Data refreshed' 
+          : 'Failed to connect to IoT device');
+          
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_connectionStatus == ConnectionStatus.connected 
-            ? 'Data refreshed' 
-            : 'Failed to connect to IoT device'),
+          content: Text(message),
           backgroundColor: _connectionStatus == ConnectionStatus.connected 
             ? Colors.blue.shade600 
             : Colors.red.shade600,
@@ -550,7 +574,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               ),
             ),
             const SizedBox(width: 12),
-            const Text('Updating clearance status...'),
+            Text(_testingService.isTestMode 
+              ? 'Updating simulated clearance status...'
+              : 'Updating clearance status...'),
           ],
         ),
         backgroundColor: Colors.blue.shade600,
@@ -643,7 +669,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               ),
             ),
             const SizedBox(width: 12),
-            const Text('Updating alert status...'),
+            Text(_testingService.isTestMode 
+              ? 'Updating simulated alert status...'
+              : 'Updating alert status...'),
           ],
         ),
         backgroundColor: Colors.blue.shade600,
@@ -832,6 +860,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     _mapController?.dispose();
     _updateTimer?.cancel(); // Cancel the timer when disposing
     _connectionBlinkTimer?.cancel(); // Cancel the connection blink timer
+    _testingService.removeTestModeChangeCallback(_onTestModeChanged);
     super.dispose();
   }
 
@@ -919,6 +948,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       connectionStatus: _connectionStatus,
       isBlinking: _isBlinking,
       errorMessage: _errorMessage,
+      isTestMode: _testingService.isTestMode,
     );
     
     // Create callbacks object to pass to tab components
@@ -1050,17 +1080,42 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              'CargoGuardian',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue.shade800,
-                              ),
-                              overflow: TextOverflow.ellipsis,
+                            Row(
+                              children: [
+                                Text(
+                                  'CargoGuardian',
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue.shade800,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (_testingService.isTestMode) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.shade100,
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(color: Colors.orange.shade300),
+                                    ),
+                                    child: Text(
+                                      'TEST',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.orange.shade700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                             Text(
-                              'Train Monitoring Dashboard',
+                              _testingService.isTestMode 
+                                ? 'Train Monitoring Dashboard (Simulation Mode)'
+                                : 'Train Monitoring Dashboard',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey.shade600,
@@ -1149,12 +1204,35 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Selected Train',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade600,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      'Selected Train',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    if (_testingService.isTestMode) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade100,
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Colors.orange.shade300),
+                        ),
+                        child: Text(
+                          'SIMULATED',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 DropdownButton<String>(
                   value: _selectedTrain,

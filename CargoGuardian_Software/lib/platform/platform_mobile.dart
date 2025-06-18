@@ -55,6 +55,20 @@ class PlatformImplementation {
     // Not applicable on mobile native apps
     return false;
   }
+
+  // NEW: Console command checking - no-op on mobile
+  static void checkConsoleCommands(Function(String) onCommand) {
+    // Console commands not available on mobile
+    // Could implement alternative like shake gesture or debug menu in the future
+  }
+
+  // NEW: Set up console command listener - no-op on mobile
+  static void setupConsoleListener() {
+    // Not applicable for mobile
+    if (kDebugMode) {
+      print("Testing mode console commands not available on mobile platform");
+    }
+  }
 }
 
 // Mobile-specific implementation

@@ -99,6 +99,24 @@ class PlatformSpecific {
       return false;
     }
   }
+
+  // NEW: Console command checking
+  static void checkConsoleCommands(Function(String) onCommand) {
+    try {
+      PlatformImplementation.checkConsoleCommands(onCommand);
+    } catch (e) {
+      // Silently handle errors - console listener is optional
+    }
+  }
+
+  // NEW: Set up console command listener
+  static void setupConsoleListener() {
+    try {
+      PlatformImplementation.setupConsoleListener();
+    } catch (e) {
+      print("Error setting up console listener: $e");
+    }
+  }
 }
 
 // This class is just for documentation purposes

@@ -1,14 +1,26 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import '../config/config.dart';
+import 'testing_service.dart';
 
 class BlynkService {
   static const String _baseUrl = 'https://blynk.cloud/external/api';
+  final TestingService _testingService = TestingService();
 
   String get _authToken => AppConfig.blynkAuthToken;
 
   // Check if IoT device is online
   Future<bool> isIoTDeviceOnline() async {
+    // If in test mode, return simulated status
+    if (_testingService.isTestMode) {
+      if (kDebugMode) {
+        print('🧪 [TEST MODE] Simulated device status: ${_testingService.simulatedDeviceOnline ? "ONLINE" : "OFFLINE"}');
+      }
+      return _testingService.simulatedDeviceOnline;
+    }
+
+    // Real device check
     try {
       final response = await http.get(
         Uri.parse('$_baseUrl/isHardwareConnected?token=$_authToken'),
@@ -16,7 +28,11 @@ class BlynkService {
       ).timeout(const Duration(seconds: 5));
       
       if (response.statusCode == 200) {
-        return response.body.toLowerCase() == 'true';
+        final isOnline = response.body.toLowerCase() == 'true';
+        if (kDebugMode) {
+          print('🔌 [REAL MODE] Device status: ${isOnline ? "ONLINE" : "OFFLINE"}');
+        }
+        return isOnline;
       } else {
         print('Error checking device status: ${response.statusCode} - ${response.body}');
         return false;
@@ -29,6 +45,16 @@ class BlynkService {
 
   // Get current weight from virtual pin V1
   Future<double> getCurrentWeight() async {
+    // If in test mode, return simulated weight
+    if (_testingService.isTestMode) {
+      final weight = _testingService.simulatedWeight;
+      if (kDebugMode) {
+        print('🧪 [TEST MODE] Simulated weight: ${weight.toStringAsFixed(1)} tons');
+      }
+      return weight;
+    }
+
+    // Real device data
     try {
       final response = await http.get(
         Uri.parse('$_baseUrl/get?token=$_authToken&v1'),
@@ -37,13 +63,18 @@ class BlynkService {
       
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        double weight;
         if (data is List && data.isNotEmpty) {
-          return double.parse(data[0].toString());
+          weight = double.parse(data[0].toString());
         } else if (data is int) {
-          return data.toDouble();
+          weight = data.toDouble();
         } else {
           throw Exception('Invalid weight data format');
         }
+        if (kDebugMode) {
+          print('🔌 [REAL MODE] Actual weight: ${weight.toStringAsFixed(1)} tons');
+        }
+        return weight;
       } else {
         throw Exception('Failed to fetch weight: ${response.statusCode} - ${response.body}');
       }
@@ -55,6 +86,16 @@ class BlynkService {
 
   // Get weight history from virtual pin V1
   Future<List<double>> getWeightHistory() async {
+    // If in test mode, return simulated history
+    if (_testingService.isTestMode) {
+      final history = _testingService.simulatedHistory;
+      if (kDebugMode) {
+        print('🧪 [TEST MODE] Simulated history: ${history.map((w) => w.toStringAsFixed(1)).join(', ')} tons');
+      }
+      return history;
+    }
+
+    // Real device history
     try {
       // Using Blynk's export data API to get historical data
       final response = await http.get(
@@ -79,6 +120,9 @@ class BlynkService {
           history.add(0.0);
         }
         
+        if (kDebugMode) {
+          print('🔌 [REAL MODE] Actual history: ${history.map((w) => w.toStringAsFixed(1)).join(', ')} tons');
+        }
         return history;
       } else if (response.statusCode == 429) {
         throw Exception('Reports limit reached. One device can send only 24 reports per day');
@@ -96,6 +140,17 @@ class BlynkService {
 
   // Set clearance status to virtual pin V2
   Future<void> setClearance(bool clearance) async {
+    // If in test mode, simulate the action
+    if (_testingService.isTestMode) {
+      if (kDebugMode) {
+        print('🧪 [TEST MODE] Simulated clearance ${clearance ? 'GIVEN' : 'REVOKED'}');
+      }
+      // Simulate a small delay
+      await Future.delayed(const Duration(milliseconds: 500));
+      return;
+    }
+
+    // Real device action
     try {
       final value = clearance ? 1 : 0;
       final response = await http.get(
@@ -104,7 +159,9 @@ class BlynkService {
       ).timeout(const Duration(seconds: 5));
       
       if (response.statusCode == 200) {
-        print('Clearance ${clearance ? 'given' : 'revoked'} successfully');
+        if (kDebugMode) {
+          print('🔌 [REAL MODE] Clearance ${clearance ? 'given' : 'revoked'} successfully');
+        }
       } else {
         throw Exception('Failed to update clearance: ${response.statusCode} - ${response.body}');
       }
@@ -116,6 +173,17 @@ class BlynkService {
 
   // Send alert to virtual pin V3
   Future<void> sendAlert(bool enable) async {
+    // If in test mode, simulate the action
+    if (_testingService.isTestMode) {
+      if (kDebugMode) {
+        print('🧪 [TEST MODE] Simulated alert ${enable ? 'ENABLED' : 'DISABLED'}');
+      }
+      // Simulate a small delay
+      await Future.delayed(const Duration(milliseconds: 500));
+      return;
+    }
+
+    // Real device action
     try {
       final value = enable ? 1 : 0;
       final response = await http.get(
@@ -124,7 +192,9 @@ class BlynkService {
       ).timeout(const Duration(seconds: 5));
       
       if (response.statusCode == 200) {
-        print('Alert ${enable ? 'enabled' : 'disabled'} successfully');
+        if (kDebugMode) {
+          print('🔌 [REAL MODE] Alert ${enable ? 'enabled' : 'disabled'} successfully');
+        }
       } else {
         throw Exception('Failed to update alert status: ${response.statusCode} - ${response.body}');
       }

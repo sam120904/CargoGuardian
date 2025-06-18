@@ -18,7 +18,7 @@ class PlatformInfo {
   });
 }
 
-// Web-specific implementation with enhanced null safety
+// Web-specific implementation with enhanced null safety and testing support
 class PlatformImplementation {
   static void openUrlInBrowser(String url) {
     try {
@@ -168,6 +168,68 @@ class PlatformImplementation {
       }
     } catch (e) {
       print("Error initializing map: $e");
+    }
+  }
+
+  // NEW: Console command checking for testing mode
+  static void checkConsoleCommands(Function(String) onCommand) {
+    try {
+      // Check if there are any console commands stored
+      final command = html.window.localStorage['console_command'];
+      if (command != null && command.isNotEmpty) {
+        onCommand(command);
+        // Clear the command after processing
+        html.window.localStorage.remove('console_command');
+      }
+    } catch (e) {
+      // Silently handle errors - console listener is optional
+    }
+  }
+
+  // NEW: Set up console command listener
+  static void setupConsoleListener() {
+    try {
+      // Add JavaScript function to handle console commands
+      js.context['setTestMode'] = (String mode) {
+        html.window.localStorage['console_command'] = mode;
+      };
+      
+      // Add console functions for easy access
+      js.context.callMethod('eval', ['''
+        // CargoGuardian Testing Commands
+        window.TEST_ON = function() {
+          window.setTestMode('TEST ON');
+          console.log('🧪 TEST MODE ENABLED - Switching to simulated data');
+          console.log('📊 Simulated device is now ONLINE with realistic weight data');
+          console.log('💡 Type TEST_OFF() to return to real hardware data');
+        };
+        
+        window.TEST_OFF = function() {
+          window.setTestMode('TEST OFF');
+          console.log('🔌 TEST MODE DISABLED - Switching to real hardware data');
+          console.log('📡 Connecting to actual IoT device...');
+        };
+        
+        // Also support string commands
+        window.addEventListener('keydown', function(e) {
+          if (e.ctrlKey && e.shiftKey && e.key === 'T') {
+            console.log('CargoGuardian Testing Commands:');
+            console.log('- Type TEST_ON() to enable simulation mode');
+            console.log('- Type TEST_OFF() to disable simulation mode');
+            console.log('- Or use Ctrl+Shift+T to see this help');
+          }
+        });
+        
+        console.log('🚀 CargoGuardian Testing Mode Available!');
+        console.log('📋 Available Commands:');
+        console.log('   • TEST_ON()  - Enable simulation mode');
+        console.log('   • TEST_OFF() - Disable simulation mode');
+        console.log('   • Ctrl+Shift+T - Show this help');
+        console.log('');
+        console.log('💡 Default mode: REAL DATA (TEST OFF)');
+      ''']);
+    } catch (e) {
+      print("Error setting up console listener: $e");
     }
   }
 }
