@@ -56,17 +56,25 @@ class PlatformImplementation {
     return false;
   }
 
-  // NEW: Console command checking - no-op on mobile
+  // Console command checking - no-op on mobile
   static void checkConsoleCommands(Function(String) onCommand) {
     // Console commands not available on mobile
     // Could implement alternative like shake gesture or debug menu in the future
   }
 
-  // NEW: Set up console command listener - no-op on mobile
+  // Set up console command listener - no-op on mobile
   static void setupConsoleListener() {
     // Not applicable for mobile
     if (kDebugMode) {
       print("Testing mode console commands not available on mobile platform");
+    }
+  }
+
+  // Register map view - no-op on mobile
+  static void registerMapView(String viewType, double lat, double lng, VoidCallback onMapClick) {
+    // Not applicable for mobile
+    if (kDebugMode) {
+      print("Map view registration not available on mobile platform");
     }
   }
 }

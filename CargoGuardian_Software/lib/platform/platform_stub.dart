@@ -1,5 +1,6 @@
 // Stub implementation for platforms that don't match web or mobile
 import 'dart:async';
+import 'package:flutter/material.dart';
 
 // This is a fallback implementation that ensures the code compiles
 // even if neither web nor mobile platforms are detected
@@ -36,13 +37,18 @@ class PlatformImplementation {
     return false;
   }
 
-  // NEW: Console command checking - stub implementation
+  // Console command checking - stub implementation
   static void checkConsoleCommands(Function(String) onCommand) {
     // Stub implementation
   }
 
-  // NEW: Set up console command listener - stub implementation
+  // Set up console command listener - stub implementation
   static void setupConsoleListener() {
+    // Stub implementation
+  }
+
+  // Register map view - stub implementation
+  static void registerMapView(String viewType, double lat, double lng, VoidCallback onMapClick) {
     // Stub implementation
   }
 }

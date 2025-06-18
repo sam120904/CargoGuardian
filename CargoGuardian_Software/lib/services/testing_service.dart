@@ -16,7 +16,7 @@ class TestingService {
   
   // Simulated data
   double _simulatedWeight = 35.0;
-  List<double> _simulatedHistory = [32.0, 34.0, 35.0, 36.0, 35.5, 35.0];
+  final List<double> _simulatedHistory = [32.0, 34.0, 35.0, 36.0, 35.5, 35.0];
   bool _simulatedDeviceOnline = true;
   
   // Callbacks for when test mode changes

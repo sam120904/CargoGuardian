@@ -100,7 +100,7 @@ class PlatformSpecific {
     }
   }
 
-  // NEW: Console command checking
+  // Console command checking
   static void checkConsoleCommands(Function(String) onCommand) {
     try {
       PlatformImplementation.checkConsoleCommands(onCommand);
@@ -109,12 +109,23 @@ class PlatformSpecific {
     }
   }
 
-  // NEW: Set up console command listener
+  // Set up console command listener
   static void setupConsoleListener() {
     try {
       PlatformImplementation.setupConsoleListener();
     } catch (e) {
       print("Error setting up console listener: $e");
+    }
+  }
+
+  // NEW: Register map view for web
+  static void registerMapView(String viewType, double lat, double lng, VoidCallback onMapClick) {
+    try {
+      if (kIsWeb) {
+        PlatformImplementation.registerMapView(viewType, lat, lng, onMapClick);
+      }
+    } catch (e) {
+      print("Error registering map view: $e");
     }
   }
 }
