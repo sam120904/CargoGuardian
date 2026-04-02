@@ -17,6 +17,8 @@ import 'connection_indicator.dart';
 import 'overview_tab.dart';
 import 'analytics_tab.dart';
 import 'location_tab.dart';
+import 'intelligence_tab.dart';
+import 'route_optimizer_tab.dart';
 
 // Data class to pass to tab components
 class DashboardData {
@@ -1371,63 +1373,71 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         color: Colors.white.withOpacity(0.7),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
-        children: [
-          _buildTabButton(0, 'Overview', Icons.dashboard_outlined),
-          _buildTabButton(1, 'Analytics', Icons.analytics_outlined),
-          _buildTabButton(2, 'Location', Icons.location_on_outlined),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildTabButton(0, 'Overview', Icons.dashboard_outlined),
+            _buildTabButton(1, 'Analytics', Icons.analytics_outlined),
+            _buildTabButton(2, 'Location', Icons.location_on_outlined),
+            _buildTabButton(3, 'Intelligence', Icons.hub_outlined),
+            _buildTabButton(4, 'Routes', Icons.route_outlined),
+          ],
+        ),
       ),
     );
   }
   
   Widget _buildTabButton(int index, String label, IconData icon) {
     final isSelected = _selectedTabIndex == index;
+    final isGraphTab = index >= 3;
     
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _selectedTabIndex = index;
-            
-            // If selecting location tab, check permission
-            if (index == 2 && !_hasLocationPermission && !_isRequestingPermission) {
-              _requestLocationPermission();
-            }
-          });
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: isSelected ? [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 5,
-                offset: const Offset(0, 2),
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedTabIndex = index;
+          
+          // If selecting location tab, check permission
+          if (index == 2 && !_hasLocationPermission && !_isRequestingPermission) {
+            _requestLocationPermission();
+          }
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? (isGraphTab ? Colors.grey.shade900 : Colors.white) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: isSelected ? [
+            BoxShadow(
+              color: (isGraphTab ? Colors.cyan : Colors.black).withOpacity(0.1),
+              blurRadius: 5,
+              offset: const Offset(0, 2),
+            ),
+          ] : null,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 24,
+              color: isSelected
+                ? (isGraphTab ? Colors.cyan.shade400 : Colors.blue.shade700)
+                : Colors.grey.shade600,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected
+                  ? (isGraphTab ? Colors.cyan.shade400 : Colors.blue.shade700)
+                  : Colors.grey.shade600,
               ),
-            ] : null,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 24,
-                color: isSelected ? Colors.blue.shade700 : Colors.grey.shade600,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? Colors.blue.shade700 : Colors.grey.shade600,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -1452,6 +1462,26 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           screenSize: screenSize,
           data: data,
           callbacks: callbacks,
+        );
+      case 3:
+        // Graph Intelligence tab — uses dark theme
+        return Container(
+          constraints: BoxConstraints(minHeight: screenSize.height * 0.7),
+          decoration: BoxDecoration(
+            color: const Color(0xFF121218),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: const IntelligenceTab(),
+        );
+      case 4:
+        // Route Optimizer tab — uses dark theme
+        return Container(
+          constraints: BoxConstraints(minHeight: screenSize.height * 0.7),
+          decoration: BoxDecoration(
+            color: const Color(0xFF121218),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: const RouteOptimizerTab(),
         );
       default:
         return OverviewTab(
