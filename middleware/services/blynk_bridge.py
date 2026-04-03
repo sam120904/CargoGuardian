@@ -25,7 +25,7 @@ class BlynkBridge:
                 )
                 return resp.status_code == 200 and resp.text.lower() == "true"
         except Exception as e:
-            print(f"Error checking Blynk device: {e}")
+            print(f"Error checking Blynk device: {repr(e)}")
             return False
 
     async def get_current_weight(self) -> float | None:

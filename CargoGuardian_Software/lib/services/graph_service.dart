@@ -18,7 +18,7 @@ class GraphService {
       final response = await http.get(
         Uri.parse('$_baseUrl/api/routes/shortest?from=$fromStation&to=$toStation'),
         headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
@@ -36,7 +36,7 @@ class GraphService {
       final response = await http.get(
         Uri.parse('$_baseUrl/api/routes/connections'),
         headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -57,7 +57,7 @@ class GraphService {
       final response = await http.get(
         Uri.parse('$_baseUrl/api/security/bottlenecks?threshold=$threshold'),
         headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -76,7 +76,7 @@ class GraphService {
       final response = await http.get(
         Uri.parse('$_baseUrl/api/security/suspicious-rerouting?hours=$hours'),
         headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -95,7 +95,7 @@ class GraphService {
       final response = await http.get(
         Uri.parse('$_baseUrl/api/security/overload-risks'),
         headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -116,7 +116,7 @@ class GraphService {
       final response = await http.get(
         Uri.parse('$_baseUrl/api/data/stations'),
         headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -135,7 +135,7 @@ class GraphService {
       final response = await http.get(
         Uri.parse('$_baseUrl/api/data/trains'),
         headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -154,7 +154,7 @@ class GraphService {
       final response = await http.get(
         Uri.parse('$_baseUrl/api/data/cargo'),
         headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -188,11 +188,14 @@ class GraphService {
   /// Check if middleware server is reachable.
   Future<bool> isMiddlewareOnline() async {
     try {
+      print("Calling backend at $_baseUrl..."); // ADDED THIS
       final response = await http.get(
         Uri.parse('$_baseUrl/health'),
       ).timeout(const Duration(seconds: 5));
+      print("Backend response status: ${response.statusCode}");
       return response.statusCode == 200;
     } catch (e) {
+      print("MIDDLEWARE CHECK CRASHED 💀: $e"); // ADDED THIS
       return false;
     }
   }

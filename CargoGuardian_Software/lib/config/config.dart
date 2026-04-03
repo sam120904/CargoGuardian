@@ -14,7 +14,7 @@ class AppConfig {
   static int get blynkPort => int.tryParse(dotenv.env['BLYNK_PORT'] ?? '443') ?? 443;
   
   // Graph Intelligence Middleware
-  static String get middlewareBaseUrl => dotenv.env['MIDDLEWARE_BASE_URL'] ?? 'http://localhost:8000';
+  static String get middlewareBaseUrl => dotenv.env['MIDDLEWARE_BASE_URL'] ?? 'http://127.0.0.1:8000';
   
   static Future<void> initialize() async {
     try {

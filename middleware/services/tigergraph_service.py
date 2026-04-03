@@ -171,14 +171,28 @@ class TigerGraphService:
         """Get auth token via TigerGraph Savanna REST API (port 443 only)."""
         import requests
 
-        # Strategy 1: /restpp/requesttoken (Savanna 4.x proxy)
+        # Savanna 4.x: API Token is the Secret. Use it immediately to save 30s startup timeouts.
+        try:
+            resp = requests.get(
+                f"{self._host}/api/ping",
+                headers={"Authorization": f"Bearer {settings.TG_SECRET}"},
+                timeout=5,
+            )
+            if resp.status_code == 200:
+                self._token = settings.TG_SECRET
+                print("   Using secret as bearer token (verified via /api/ping)")
+                return
+        except Exception as e:
+            print(f"   Bearer token test failed: {e}")
+
+        # Fallback: /restpp/requesttoken (Legacy 3.x proxy)
         for path in ["/restpp/requesttoken", "/api/requesttoken", "/requesttoken"]:
             try:
                 resp = requests.post(
                     f"{self._host}{path}",
                     json={"secret": settings.TG_SECRET, "graph": self._graphname},
                     headers={"Content-Type": "application/json"},
-                    timeout=15,
+                    timeout=5,
                 )
                 if resp.status_code == 200:
                     data = resp.json()
@@ -187,11 +201,11 @@ class TigerGraphService:
                         self._token = token
                         print(f"   Token acquired via {path}")
                         return
-                    print(f"   {path}: 200 but no token in response: {resp.text[:200]}")
+                    print(f"   {path}: 200 but no token in response")
                 else:
-                    print(f"   {path}: {resp.status_code} - {resp.text[:100]}")
+                    print(f"   {path}: {resp.status_code}")
             except Exception as e:
-                print(f"   {path}: Failed - {e}")
+                pass
 
         # Strategy 2: Use secret directly as bearer token and verify with /api/ping
         try:
