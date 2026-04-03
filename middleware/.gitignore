@@ -2,4 +2,4 @@
 __pycache__/
 *.pyc
 .env.example
-./middleware/.env
+middleware/.env
