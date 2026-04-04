@@ -1,0 +1,6 @@
+warning - Unused import: 'dart:math' - lib\dashboard\intelligence_tab.dart:3:8 - unused_import
+warning - The value of the field '_stations' isn't used - lib\dashboard\intelligence_tab.dart:26:17 - unused_field
+   info - Unnecessary use of string interpolation - lib\dashboard\intelligence_tab.dart:469:25 - unnecessary_string_interpolations
+warning - Unused import: 'dart:math' - lib\dashboard\route_optimizer_tab.dart:3:8 - unused_import
+  error - The property 'shade800' can't be accessed on the type 'MaterialColor' in a constant expression - lib\dashboard\route_optimizer_tab.dart:185:26 - const_eval_property_access
+   info - Unnecessary use of 'toList' in a spread - lib\dashboard\route_optimizer_tab.dart:666:14 - unnecessary_to_list_in_spreads

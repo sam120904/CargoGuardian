@@ -1,0 +1,18 @@
+warning - Unused import: 'dart:math' - lib\dashboard\intelligence_tab.dart:3:8 - unused_import
+warning - The value of the field '_stations' isn't used - lib\dashboard\intelligence_tab.dart:26:17 - unused_field
+  error - The property 'shade800' can't be accessed on the type 'MaterialColor' in a constant expression - lib\dashboard\intelligence_tab.dart:356:26 - const_eval_property_access
+  error - The property 'shade500' can't be accessed on the type 'MaterialColor' in a constant expression - lib\dashboard\intelligence_tab.dart:442:26 - const_eval_property_access
+   info - Unnecessary use of string interpolation - lib\dashboard\intelligence_tab.dart:469:25 - unnecessary_string_interpolations
+  error - The property 'shade800' can't be accessed on the type 'MaterialColor' in a constant expression - lib\dashboard\intelligence_tab.dart:473:34 - const_eval_property_access
+  error - The property 'shade800' can't be accessed on the type 'MaterialColor' in a constant expression - lib\dashboard\intelligence_tab.dart:781:28 - const_eval_property_access
+  error - The property 'shade800' can't be accessed on the type 'MaterialColor' in a constant expression - lib\dashboard\intelligence_tab.dart:847:28 - const_eval_property_access
+  error - The property 'shade800' can't be accessed on the type 'MaterialColor' in a constant expression - lib\dashboard\intelligence_tab.dart:924:78 - const_eval_property_access
+  error - The property 'shade800' can't be accessed on the type 'MaterialColor' in a constant expression - lib\dashboard\intelligence_tab.dart:988:78 - const_eval_property_access
+warning - Unused import: 'dart:math' - lib\dashboard\route_optimizer_tab.dart:3:8 - unused_import
+  error - The property 'shade800' can't be accessed on the type 'MaterialColor' in a constant expression - lib\dashboard\route_optimizer_tab.dart:185:26 - const_eval_property_access
+  error - The property 'shade800' can't be accessed on the type 'MaterialColor' in a constant expression - lib\dashboard\route_optimizer_tab.dart:297:43 - const_eval_property_access
+  error - The property 'shade800' can't be accessed on the type 'MaterialColor' in a constant expression - lib\dashboard\route_optimizer_tab.dart:307:49 - const_eval_property_access
+  error - The property 'shade500' can't be accessed on the type 'MaterialColor' in a constant expression - lib\dashboard\route_optimizer_tab.dart:415:22 - const_eval_property_access
+  error - The property 'shade800' can't be accessed on the type 'MaterialColor' in a constant expression - lib\dashboard\route_optimizer_tab.dart:445:22 - const_eval_property_access
+  error - The property 'shade800' can't be accessed on the type 'MaterialColor' in a constant expression - lib\dashboard\route_optimizer_tab.dart:647:30 - const_eval_property_access
+   info - Unnecessary use of 'toList' in a spread - lib\dashboard\route_optimizer_tab.dart:666:14 - unnecessary_to_list_in_spreads

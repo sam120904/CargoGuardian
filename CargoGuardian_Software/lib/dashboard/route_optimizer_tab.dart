@@ -107,10 +107,10 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
             CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(Colors.cyan.shade400),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               'Loading station network...',
-              style: TextStyle(color: Colors.grey.shade400),
+              style: TextStyle(color: Colors.grey.shade600),
             ),
           ],
         ),
@@ -118,21 +118,21 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
           _buildHeader(),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
 
           // Station Selection
           _buildStationSelector(),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
 
           // Find Route Button
           _buildFindButton(),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
 
           // Error
           if (_error != null) _buildError(),
@@ -140,13 +140,13 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
           // Result
           if (_routeResult != null) ...[
             _buildRouteResult(),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             _buildRouteVisualization(),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             _buildSegmentDetails(),
           ],
 
-          const SizedBox(height: 40),
+          SizedBox(height: 40),
         ],
       ),
     );
@@ -156,7 +156,7 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(10),
+          padding: EdgeInsets.all(10),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [Colors.cyan.shade600, Colors.teal.shade600],
@@ -170,10 +170,10 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
               ),
             ],
           ),
-          child: const Icon(Icons.route, color: Colors.white, size: 24),
+          child: Icon(Icons.route, color: Colors.white, size: 24),
         ),
-        const SizedBox(width: 12),
-        const Expanded(
+        SizedBox(width: 12),
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -182,12 +182,12 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Colors.grey.shade800,
                 ),
               ),
               Text(
                 'Graph-powered shortest path analysis',
-                style: TextStyle(fontSize: 13, color: Colors.white54),
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
               ),
             ],
           ),
@@ -198,11 +198,17 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
 
   Widget _buildStationSelector() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.grey.shade900.withOpacity(0.5),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade800),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -214,7 +220,7 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
             value: _fromStation,
             onChanged: (v) => setState(() => _fromStation = v),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
 
           // Swap button
           Center(
@@ -227,16 +233,16 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
                 });
               },
               child: Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade800,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.swap_vert, color: Colors.cyan.shade300, size: 20),
+                child: Icon(Icons.swap_vert, color: Colors.cyan.shade700, size: 20),
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
 
           // To Station
           _buildDropdown(
@@ -264,41 +270,41 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
         Row(
           children: [
             Icon(icon, color: color, size: 16),
-            const SizedBox(width: 6),
+            SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey.shade400,
+                color: Colors.grey.shade600,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: Colors.grey.shade800.withOpacity(0.5),
+            color: Colors.grey.shade100,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.grey.shade700),
+            border: Border.all(color: Colors.grey.shade300),
           ),
           child: DropdownButton<String>(
             value: value,
             isExpanded: true,
-            underline: const SizedBox(),
-            dropdownColor: Colors.grey.shade900,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
+            underline: SizedBox(),
+            dropdownColor: Colors.white,
+            style: TextStyle(color: Colors.grey.shade800, fontSize: 14),
             hint: Text(
               'Select station',
-              style: TextStyle(color: Colors.grey.shade500),
+              style: TextStyle(color: Colors.grey.shade600),
             ),
             items: _stations.map<DropdownMenuItem<String>>((station) {
               return DropdownMenuItem<String>(
                 value: station['station_id'],
                 child: Text(
                   '${station['name']} (${station['station_id']})',
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: TextStyle(color: Colors.grey.shade800, fontSize: 14),
                 ),
               );
             }).toList(),
@@ -319,7 +325,7 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
           backgroundColor: Colors.cyan.shade700,
           foregroundColor: Colors.white,
           disabledBackgroundColor: Colors.grey.shade800,
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -334,14 +340,14 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
                     height: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white,
+                      color: Colors.grey.shade800,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  const Text('Running Dijkstra\'s Algorithm...'),
+                  SizedBox(width: 12),
+                  Text('Running Dijkstra\'s Algorithm...'),
                 ],
               )
-            : const Row(
+            : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.bolt),
@@ -358,8 +364,8 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
 
   Widget _buildError() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(12),
+      margin: EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.red.shade900.withOpacity(0.3),
         borderRadius: BorderRadius.circular(10),
@@ -367,12 +373,12 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline, color: Colors.red.shade300, size: 18),
-          const SizedBox(width: 8),
+          Icon(Icons.error_outline, color: Colors.red.shade700, size: 18),
+          SizedBox(width: 8),
           Expanded(
             child: Text(
               _error!,
-              style: TextStyle(color: Colors.red.shade300, fontSize: 13),
+              style: TextStyle(color: Colors.red.shade700, fontSize: 13),
             ),
           ),
         ],
@@ -387,31 +393,30 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
     final stops = (data['stops'] as num?)?.toInt() ?? 0;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.cyan.shade900.withOpacity(0.4),
-            Colors.teal.shade900.withOpacity(0.3),
-          ],
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.cyan.shade700.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          const Text(
+          Text(
             'OPTIMAL ROUTE FOUND',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: Colors.white54,
+              color: Colors.grey.shade500,
               letterSpacing: 3,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Row(
             children: [
               _buildRouteStat(Icons.timer, '${totalHours.toStringAsFixed(1)}h', 'Travel Time'),
@@ -430,19 +435,19 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
     return Expanded(
       child: Column(
         children: [
-          Icon(icon, color: Colors.cyan.shade300, size: 22),
-          const SizedBox(height: 6),
+          Icon(icon, color: Colors.cyan.shade700, size: 22),
+          SizedBox(height: 6),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Colors.grey.shade800,
             ),
           ),
           Text(
             label,
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
           ),
         ],
       ),
@@ -453,7 +458,7 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
     final data = _routeResult?['data'] as Map<String, dynamic>? ?? {};
     final path = data['path'] as List? ?? [];
 
-    if (path.isEmpty) return const SizedBox();
+    if (path.isEmpty) return SizedBox();
 
     return AnimatedBuilder(
       animation: _pathAnimation,
@@ -461,7 +466,7 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
         final visibleCount = (_pathAnimation.value * path.length).ceil().clamp(0, path.length);
 
         return Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Colors.grey.shade900.withOpacity(0.5),
             borderRadius: BorderRadius.circular(16),
@@ -475,11 +480,11 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  color: Colors.grey.shade400,
+                  color: Colors.grey.shade600,
                   letterSpacing: 2,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               ...List.generate(path.length, (i) {
                 final isVisible = i < visibleCount;
                 final isFirst = i == 0;
@@ -533,10 +538,10 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
                           ],
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                           decoration: BoxDecoration(
                             color: isVisible
                                 ? (isFirst
@@ -558,10 +563,10 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
                                 ),
                               ),
                               if (station['city'] != null && station['city'] != '') ...[
-                                const SizedBox(width: 8),
+                                SizedBox(width: 8),
                                 Text(
                                   station['city'],
-                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                                 ),
                               ],
                             ],
@@ -583,14 +588,20 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
     final data = _routeResult?['data'] as Map<String, dynamic>? ?? {};
     final segments = data['segments'] as List? ?? [];
 
-    if (segments.isEmpty) return const SizedBox();
+    if (segments.isEmpty) return SizedBox();
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade900.withOpacity(0.5),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade800),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -600,11 +611,11 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: Colors.grey.shade400,
+              color: Colors.grey.shade600,
               letterSpacing: 2,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           ...segments.map<Widget>((seg) {
             final congestion = (seg['congestion'] as num?)?.toDouble() ?? 0;
             final congestionColor = congestion > 0.6
@@ -620,8 +631,8 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
                     : Colors.red;
 
             return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
+              margin: EdgeInsets.only(bottom: 8),
+              padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.grey.shade800.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(10),
@@ -631,21 +642,21 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
                 children: [
                   Text(
                     '${seg['from']} → ${seg['to']}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Colors.grey.shade800,
                       fontSize: 13,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Row(
                     children: [
                       _buildSegmentChip(Icons.straighten, '${seg['distance_km']} km', Colors.cyan),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       _buildSegmentChip(Icons.timer, '${seg['travel_hours']}h', Colors.teal),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       _buildSegmentChip(Icons.traffic, '${(congestion * 100).toStringAsFixed(0)}%', congestionColor),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       _buildSegmentChip(Icons.construction, condition, conditionColor),
                     ],
                   ),
@@ -660,7 +671,7 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
 
   Widget _buildSegmentChip(IconData icon, String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(6),
@@ -669,7 +680,7 @@ class _RouteOptimizerTabState extends State<RouteOptimizerTab>
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 12, color: color),
-          const SizedBox(width: 3),
+          SizedBox(width: 3),
           Text(
             label,
             style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),

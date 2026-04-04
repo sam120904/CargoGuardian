@@ -1,6 +1,6 @@
 ### 🚆 CargoGuardian - IoT-Based Train Cargo Management System
 
-**CargoGuardian** is a smart, IoT-powered system that automates the monitoring, clearance, and tracking of train cargo. Designed for efficiency, safety, and transparency, it enables railway operators to detect overloading, prevent theft, and keep accurate, automated records of cargo movement — all from a single cross-platform application.
+**CargoGuardian** is a smart, IoT-powered system that automates the monitoring, clearance, and tracking of train cargo. Designed for efficiency, safety, and transparency, it enables railway operators to detect overloading, prevent theft, and keep accurate, automated records of cargo movement — all through a centralized, cross-platform application powered by advanced graph database intelligence.
 
 🌐 [Try the Live App](https://vector-shield-io-t-based-train-cargo-managment-system.vercel.app/)
 
@@ -10,12 +10,13 @@
 
 ## 📦 Project Overview
 
-CargoGuardian enhances railway logistics through **automated weight monitoring**, **live GPS tracking**, and **remote clearance capabilities**. By integrating IoT sensors with a smart app interface, it:
+CargoGuardian enhances railway logistics through **automated weight monitoring**, **live GPS tracking**, and **remote clearance capabilities**. By integrating IoT sensors with a smart app interface and an advanced logistics graph database, it:
 
 - Detects **overload/underload conditions** and blocks unsafe cargo.
 - Uses **RFID or mobile app** for clearance—both online and offline.
 - Prevents cargo theft via **access control and live monitoring**.
 - Logs every cargo's **origin, destination, timestamp, and status** automatically for full documentation and accountability.
+- Employs **advanced route optimization** and **logistics intelligence** using TigerGraph.
 
 ---
 
@@ -26,27 +27,27 @@ CargoGuardian enhances railway logistics through **automated weight monitoring**
 - Displays color-coded alerts: ✅ Green (Normal), ⚠️ Yellow (Underload), 🚫 Red (Overload)
 - Automates weight checks to remove manual paperwork
 
-### 📍 Live GPS Tracking
+### 📍 Live GPS Tracking & Route Optimization
 - Monitors train location in real-time
 - Tracks routes, journey status, and ETA
-- Maps interface for visual navigation
+- Leverages graph algorithms to compute optimal paths across complex rail networks
+- Visual map interface for intuitive navigation
 
 ### 🔐 Anti-Theft Protection
 - Uses RFID-based access control and tamper alerts
 - Ensures only authorized clearance and access
 - Detects unauthorized removal or tampering in cargo sections
 
-### 📄 Automated Cargo Documentation
-- Records what cargo was sent, from where, to where, and when
-- Stores digital cargo manifests automatically
-- Easy to retrieve logs for audits, reports, and investigations
+### 🧠 Graph-Powered Intelligence & Analytics
+- Deep connectivity analysis using TigerGraph
+- Intelligent insights on cargo delays, network bottlenecks, and high-traffic nodes
+- Stores digital cargo manifests and automates log retrieval for audits and reports
 
 ### 🧑‍💼 Role-Based Access System
 CargoGuardian includes a hierarchical user access model:
 - **Worker Level**: Can scan cargo, view current train status, and submit logs
 - **Train Master Level**: Can view current and past train cargo logs, authorize train clearances
 - **Admin/Authority Level**: Full access to all historical records, analytics dashboards, and permission management
-- This ensures sensitive data is protected and only visible to the appropriate user roles
 
 ### 🌐 Multi-Platform Access
 - Works as a **web app, Android app, and iOS app**
@@ -58,54 +59,60 @@ CargoGuardian includes a hierarchical user access model:
 ## 🧰 Tech Stack
 
 - **Frontend:** Flutter (cross-platform UI)
-- **Backend:** Firebase (Auth, Realtime DB, Cloud Functions)
+- **Middleware API:** FastAPI (Python REST API for secure backend communication)
+- **Database & Intelligence:** TigerGraph (Graph Database, Route Optimization) & Firebase (Auth, Cloud Functions)
 - **IoT Integration:** Blynk (sensor communication)
 - **Maps & Location:** Google Maps API
 - **Visualization:** FL Chart (for analytics dashboard)
-- **RFID Hardware:** For offline cargo clearance and anti-theft
-
----
-
-## 🌟 Why CargoGuardian?
-
-- 🔄 **Fully Automated**: Reduces manual checks and paperwork
-- 🔐 **Secure & Accountable**: Prevents unauthorized cargo access
-- 📊 **Transparent**: Cargo history and movement always documented
-- 🛠️ **Scalable**: Easily add more sensors or wagons
-- 🏆 **Proven Winner**: HackHiest 2025 2nd Runner-Up Project
+- **Hardware:** ESP32/Arduino, GPS Module, RFID Units (for offline cargo clearance and anti-theft), Load cells
 
 ---
 
 ## 🏗️ System Architecture
 
-- **Flutter App**: Unified interface for all platforms
-- **IoT Layer**: Weight sensors, RFID units, GPS modules
-- **Backend Services**: Firebase handles data sync, auth, and cloud logic
-- **RFID & Clearance Logic**: Works online or offline with token-based validation
-- **Analytics Dashboard**: Visualizes status, routes, and history
+- **Flutter App**: Unified interface for all platforms with interactive route and intelligence dashboards.
+- **Middleware API**: A robust FastAPI bridge connecting the frontend with backend graph processing.
+- **TigerGraph Cloud**: Handles deep logistics queries, journey optimization, and complex relationship mapping.
+- **Firebase**: Manages real-time data sync, user authentication, and basic records.
+- **IoT Layer**: Weight sensors, RFID units, and GPS modules feeding live data telemetry to the system.
 
 ---
 
 ## ⚙️ Getting Started
 
-1. **Set Up Flutter Environment**
-2. **Clone Repository**  
-   ```bash
-   git clone https://github.com/Vaibhav0120/Vector-Shield_IoT-Based-Train-cargo-managment-system.git
-   ```
-3. **Install Dependencies**  
-   ```bash
-   flutter pub get
-   ```
-4. **Configure Firebase**  
-   Add your Firebase project files (`google-services.json`, etc.)
-5. **Connect IoT Devices**  
-   Configure Blynk and RFID setup using provided device tokens
-6. **Run the App**  
-   Launch on web, Android, or iOS:
-   ```bash
-   flutter run
-   ```
+### 1. Set Up Middleware (FastAPI)
+
+Navigate to the middleware directory, set up your Python environment, and start the local server:
+
+```bash
+cd middleware
+pip install -r requirements.txt
+
+# Start the FastAPI server
+uvicorn main:app --reload
+```
+The middleware runs on `http://127.0.0.1:8000` and securely interfaces with TigerGraph.
+
+### 2. Set Up the Flutter App
+
+Navigate to the frontend directory:
+
+```bash
+cd CargoGuardian_Software
+```
+
+Install dependencies:
+```bash
+flutter pub get
+```
+
+Set up environment variables:
+Create a `.env` file in the root of `CargoGuardian_Software` containing your map keys, API URLs, and configuration lines.
+
+Run the Flutter app:
+```bash
+flutter run
+```
 
 ---
 
@@ -116,7 +123,7 @@ CargoGuardian includes a hierarchical user access model:
 - **Samarth Sharma**
 - **Piyush**
 
-> 🚆 Built with both **hardware (IoT)** and **software** components to create a complete cargo safety solution.
+> 🚆 Built with both **hardware (IoT)** and **software** components to create a complete cargo safety and logistics solution.
 
 ---
 
@@ -125,4 +132,3 @@ CargoGuardian includes a hierarchical user access model:
 ![Image](https://github.com/user-attachments/assets/82ad6c49-187f-4098-a242-206c48c28ce6)
 ![Image](https://github.com/user-attachments/assets/1cf11547-aa73-4bac-b74e-e10809b2ee6c)
 ![Image](https://github.com/user-attachments/assets/396ac0ce-d3d4-4661-8eaa-bc0361695437)
-

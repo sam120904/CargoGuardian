@@ -141,7 +141,7 @@ class _IntelligenceTabState extends State<IntelligenceTab>
       color: Colors.cyan,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -214,7 +214,7 @@ class _IntelligenceTabState extends State<IntelligenceTab>
             'Loading Graph Intelligence...',
             style: TextStyle(
               fontSize: 16,
-              color: Colors.grey.shade400,
+              color: Colors.grey.shade600,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -231,7 +231,7 @@ class _IntelligenceTabState extends State<IntelligenceTab>
   Widget _buildErrorView() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -246,12 +246,12 @@ class _IntelligenceTabState extends State<IntelligenceTab>
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey.shade300,
+                color: Colors.grey.shade700,
               ),
             ),
             const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.grey.shade900,
                 borderRadius: BorderRadius.circular(12),
@@ -262,20 +262,20 @@ class _IntelligenceTabState extends State<IntelligenceTab>
                   Text(
                     _errorMessage ?? 'Unknown error',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade400),
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'Run the middleware server:',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.cyan.shade300,
+                      color: Colors.cyan.shade700,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.black54,
                       borderRadius: BorderRadius.circular(8),
@@ -298,12 +298,12 @@ class _IntelligenceTabState extends State<IntelligenceTab>
                 setState(() => _isLoading = true);
                 _loadData();
               },
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry Connection'),
+              icon: Icon(Icons.refresh),
+              label: Text('Retry Connection'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.cyan.shade700,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -324,7 +324,7 @@ class _IntelligenceTabState extends State<IntelligenceTab>
             return Transform.scale(
               scale: _pulseAnimation.value,
               child: Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [Colors.cyan.shade600, Colors.deepPurple.shade600],
@@ -338,7 +338,7 @@ class _IntelligenceTabState extends State<IntelligenceTab>
                     ),
                   ],
                 ),
-                child: const Icon(Icons.hub, color: Colors.white, size: 24),
+                child: Icon(Icons.hub, color: Colors.white, size: 24),
               ),
             );
           },
@@ -348,12 +348,12 @@ class _IntelligenceTabState extends State<IntelligenceTab>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Graph Intelligence',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Colors.grey.shade800,
                 ),
               ),
               Row(
@@ -377,7 +377,7 @@ class _IntelligenceTabState extends State<IntelligenceTab>
                   if (_networkHealth?['demo_mode'] == true) ...[
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: Colors.amber.shade900.withOpacity(0.3),
                         borderRadius: BorderRadius.circular(6),
@@ -403,7 +403,7 @@ class _IntelligenceTabState extends State<IntelligenceTab>
             setState(() => _isLoading = true);
             _loadData();
           },
-          icon: Icon(Icons.refresh, color: Colors.grey.shade400),
+          icon: Icon(Icons.refresh, color: Colors.grey.shade600),
           tooltip: 'Refresh data',
         ),
       ],
@@ -420,43 +420,26 @@ class _IntelligenceTabState extends State<IntelligenceTab>
       builder: (context, child) {
         return Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [
-                Colors.cyan.shade900.withOpacity(0.4),
-                Colors.deepPurple.shade900.withOpacity(0.3),
-                Colors.red.shade900.withOpacity(0.4),
-              ],
-            ),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.cyan.shade700.withOpacity(0.3),
-              width: 1,
-            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.cyan.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(-5, 0),
-              ),
-              BoxShadow(
-                color: Colors.red.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(5, 0),
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
           child: Column(
             children: [
-              const Text(
+              Text(
                 'DUALITY SCORE',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white54,
+                  color: Colors.grey.shade500,
                   letterSpacing: 3,
                 ),
               ),
@@ -470,7 +453,7 @@ class _IntelligenceTabState extends State<IntelligenceTab>
                     child: CircularProgressIndicator(
                       value: _scoreAnimation.value * (dualityScore / 100),
                       strokeWidth: 8,
-                      backgroundColor: Colors.grey.shade800,
+                      backgroundColor: Colors.grey.shade200,
                       valueColor: AlwaysStoppedAnimation<Color>(
                         dualityScore > 70
                             ? Colors.greenAccent
@@ -484,15 +467,15 @@ class _IntelligenceTabState extends State<IntelligenceTab>
                     children: [
                       Text(
                         '${(dualityScore * _scoreAnimation.value).toStringAsFixed(0)}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 36,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: Colors.grey.shade800,
                         ),
                       ),
                       Text(
                         'of 100',
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                       ),
                     ],
                   ),
@@ -536,7 +519,7 @@ class _IntelligenceTabState extends State<IntelligenceTab>
           label,
           style: TextStyle(
             fontSize: 13,
-            color: Colors.grey.shade400,
+            color: Colors.grey.shade600,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -563,7 +546,7 @@ class _IntelligenceTabState extends State<IntelligenceTab>
         // Efficiency Panel
         Expanded(
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -581,14 +564,14 @@ class _IntelligenceTabState extends State<IntelligenceTab>
               children: [
                 Row(
                   children: [
-                    Icon(Icons.bolt, color: Colors.cyan.shade300, size: 20),
+                    Icon(Icons.bolt, color: Colors.cyan.shade700, size: 20),
                     const SizedBox(width: 6),
                     Text(
                       'EFFICIENCY',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: Colors.cyan.shade300,
+                        color: Colors.cyan.shade700,
                         letterSpacing: 2,
                       ),
                     ),
@@ -607,7 +590,7 @@ class _IntelligenceTabState extends State<IntelligenceTab>
         // Security Panel
         Expanded(
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -625,14 +608,14 @@ class _IntelligenceTabState extends State<IntelligenceTab>
               children: [
                 Row(
                   children: [
-                    Icon(Icons.shield, color: Colors.red.shade300, size: 20),
+                    Icon(Icons.shield, color: Colors.red.shade700, size: 20),
                     const SizedBox(width: 6),
                     Text(
                       'SECURITY',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: Colors.red.shade300,
+                        color: Colors.red.shade700,
                         letterSpacing: 2,
                       ),
                     ),
@@ -653,13 +636,13 @@ class _IntelligenceTabState extends State<IntelligenceTab>
 
   Widget _buildMetric(String label, String value, Color color) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
           ),
           Text(
             value,
@@ -678,11 +661,17 @@ class _IntelligenceTabState extends State<IntelligenceTab>
     final network = health['network'] as Map<String, dynamic>? ?? {};
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade900.withOpacity(0.5),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade800),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -692,7 +681,7 @@ class _IntelligenceTabState extends State<IntelligenceTab>
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: Colors.grey.shade400,
+              color: Colors.grey.shade600,
               letterSpacing: 2,
             ),
           ),
@@ -726,7 +715,7 @@ class _IntelligenceTabState extends State<IntelligenceTab>
           ),
           Text(
             label,
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
           ),
         ],
       ),
@@ -763,17 +752,17 @@ class _IntelligenceTabState extends State<IntelligenceTab>
     final riskColor = riskLevel == 'CRITICAL' ? Colors.red : riskLevel == 'HIGH' ? Colors.orange : Colors.amber;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
+      margin: EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: riskColor.withOpacity(0.08),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: riskColor.withOpacity(0.3)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: riskColor.withOpacity(0.15),
               borderRadius: BorderRadius.circular(8),
@@ -787,15 +776,15 @@ class _IntelligenceTabState extends State<IntelligenceTab>
               children: [
                 Text(
                   bottleneck['name'] ?? '',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: Colors.grey.shade800,
                     fontSize: 14,
                   ),
                 ),
                 Text(
                   '${bottleneck['city']} • ${bottleneck['connections'] ?? 0} connections',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -804,7 +793,7 @@ class _IntelligenceTabState extends State<IntelligenceTab>
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: riskColor.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(6),
@@ -821,7 +810,7 @@ class _IntelligenceTabState extends State<IntelligenceTab>
               const SizedBox(height: 4),
               Text(
                 '${(loadRatio * 100).toStringAsFixed(0)}% loaded',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
               ),
             ],
           ),
@@ -836,12 +825,12 @@ class _IntelligenceTabState extends State<IntelligenceTab>
     final deviations = suspicious['unplanned_stops'] as List? ?? [];
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
+      margin: EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: riskColor.withOpacity(0.08),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: riskColor.withOpacity(0.3)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -853,15 +842,15 @@ class _IntelligenceTabState extends State<IntelligenceTab>
               Expanded(
                 child: Text(
                   suspicious['description'] ?? '',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: Colors.grey.shade800,
                     fontSize: 14,
                   ),
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: riskColor.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(6),
@@ -876,7 +865,7 @@ class _IntelligenceTabState extends State<IntelligenceTab>
           const SizedBox(height: 8),
           Text(
             '${suspicious['origin_station']} → ${suspicious['destination_station']}',
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
           ),
           if (deviations.isNotEmpty) ...[
             const SizedBox(height: 6),
@@ -885,14 +874,14 @@ class _IntelligenceTabState extends State<IntelligenceTab>
               runSpacing: 4,
               children: deviations.map<Widget>((stop) {
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: Colors.red.shade900.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
                     '⚠ $stop',
-                    style: TextStyle(fontSize: 11, color: Colors.red.shade300),
+                    style: TextStyle(fontSize: 11, color: Colors.red.shade700),
                   ),
                 );
               }).toList(),
@@ -902,7 +891,7 @@ class _IntelligenceTabState extends State<IntelligenceTab>
             const SizedBox(height: 6),
             Text(
               suspicious['reason'],
-              style: TextStyle(fontSize: 12, color: Colors.orange.shade300, fontStyle: FontStyle.italic),
+              style: TextStyle(fontSize: 12, color: Colors.orange.shade700, fontStyle: FontStyle.italic),
             ),
           ],
         ],
@@ -915,12 +904,12 @@ class _IntelligenceTabState extends State<IntelligenceTab>
     final color = loadPct > 95 ? Colors.red : Colors.orange;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
+      margin: EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))],
       ),
       child: Row(
         children: [
@@ -932,11 +921,11 @@ class _IntelligenceTabState extends State<IntelligenceTab>
               children: [
                 Text(
                   risk['name'] ?? '',
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 14),
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade800, fontSize: 14),
                 ),
                 Text(
                   '${risk['current_weight']}t / ${risk['max_capacity']}t',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -973,12 +962,18 @@ class _IntelligenceTabState extends State<IntelligenceTab>
         : 0.0;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
+      margin: EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.grey.shade900.withOpacity(0.5),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade800),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -990,7 +985,7 @@ class _IntelligenceTabState extends State<IntelligenceTab>
               children: [
                 Text(
                   train['name'] ?? train['train_id'] ?? '',
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 14),
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade800, fontSize: 14),
                 ),
                 Row(
                   children: [
@@ -1011,7 +1006,7 @@ class _IntelligenceTabState extends State<IntelligenceTab>
                       const SizedBox(width: 8),
                       Text(
                         '${train['speed']} km/h',
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                       ),
                     ],
                   ],
@@ -1035,7 +1030,7 @@ class _IntelligenceTabState extends State<IntelligenceTab>
                 const SizedBox(height: 4),
                 LinearProgressIndicator(
                   value: loadPct.clamp(0.0, 1.0).toDouble(),
-                  backgroundColor: Colors.grey.shade800,
+                  backgroundColor: Colors.grey.shade200,
                   valueColor: AlwaysStoppedAnimation<Color>(
                     loadPct > 0.9 ? Colors.red : loadPct > 0.7 ? Colors.amber : Colors.greenAccent,
                   ),
